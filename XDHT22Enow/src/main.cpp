@@ -19,6 +19,7 @@ uint8_t cydMAC[] = {0x5C, 0x01, 0x3B, 0x50, 0x11, 0xD0}; //5C:01:3B:50:11:D0
 // ================= VARIABLES ==================
 uint8_t moisture_set =0;
 float t,h,m =0;
+uint8_t sendCount =0;
 
 // ================= PINS =================
 #define DHTPIN D1
@@ -113,12 +114,12 @@ void loop() {
     h = dht.readHumidity();
     t = dht.readTemperature(true);
     m=analogRead(moisturePin);
-    delay(1000);
+    delay(100);
 
     // Converitng reading to 0-100 scale
     // For moisture Saturation (%)
     m=1-((m-1600)/2495);
-    delay(1000);
+    delay(100);
 
     // if (m< (moisture_set-5)){
     //     digitalWrite(valvePin, HIGH);
@@ -127,12 +128,21 @@ void loop() {
     //     digitalWrite(valvePin, LOW);
     // }
 
-    // sendData();
-    Serial.println(moisture_set);
-    Serial.println(h,t);
-    Serial.println(m);
-    Serial.print("");
-    delay(3000);
+    if (sendCount = 10){
+        sendData();
+        sendCount=0;
+    }
+    else {
+        sendCount += 1;
+    }
+
+    // Serial.println(moisture_set);
+    // Serial.println(h);
+    // Serial.println(t);
+    // Serial.println(m);
+    // Serial.println("");
+
+    delay(300);
 }
 
 
