@@ -1,0 +1,20 @@
+{
+	"folders": [
+		{
+			"path": "../../../.."
+		},
+		{
+			"name": "XiaoTest",
+			"path": "../../../XiaoTest"
+		},
+		{
+			"name": "ESPNowCYD",
+			"path": "../../ESPNowCYD"
+		},
+		{
+			"name": "XDHT22Enow",
+			"path": ".."
+		}
+	],
+	"settings": {}
+}
