@@ -128,21 +128,23 @@ void loop() {
     //     digitalWrite(valvePin, LOW);
     // }
 
-    if (sendCount = 10){
+    
+    // Serial.println(moisture_set);
+    // Serial.println(h);
+    // Serial.println(t);
+    // Serial.println(m);
+    // Serial.println("");
+    
+    delay(300);
+
+    // Counting loop for sending every 10 Cycles or 5 seconds
+    if (sendCount = 9){
         sendData();
         sendCount=0;
     }
     else {
         sendCount += 1;
     }
-
-    // Serial.println(moisture_set);
-    // Serial.println(h);
-    // Serial.println(t);
-    // Serial.println(m);
-    // Serial.println("");
-
-    delay(300);
 }
 
 
