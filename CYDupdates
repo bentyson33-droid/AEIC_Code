@@ -10,28 +10,31 @@
 // ================= DEVICE DEFINES =================
 #define DEVICE_TYPE_CYD  0x02
 #define TARGET_XIAO_ADDR 1
-float moisture = 50;
 
-// ================= XIAO MAC =======================
-uint8_t xiaoMAC[] = {0x58, 0x8C, 0x81, 0xA4, 0xCC, 0x14};
+// ================= XIAO MACS =======================
+uint8_t pot1MAC[] = {0x24,0x6F,0x28,0xAA,0x11,0x01};
+uint8_t pot2MAC[] = {0x24,0x6F,0x28,0xAA,0x11,0x02};
+uint8_t pot3MAC[] = {0x24,0x6F,0x28,0xAA,0x11,0x03};
+uint8_t greenhouseMAC[] = {0x24,0x6F,0x28,0xAA,0x11,0x04};
 
 // ================= PACKETS ========================
 typedef struct __attribute__((packed)) {
     uint8_t type;
-    uint8_t pot;
-    uint8_t moisture;
+    uint8_t moisture_target;
     uint8_t tolerance;
 } pot_settings_packet_t;
 
 typedef struct __attribute__((packed)) {
     uint8_t type; 
-    uint8_t temp;
-    uint8_t humidity;
+    uint8_t temp_target;
+    uint8_t humidity_target;
+    uint8_t temp_tolerance;
+    uint8_t humidity_tolerance;
 } greenhouse_packet_t;
 
 typedef struct __attribute__((packed)) {
-    uint8_t devAddr;
-    uint8_t devType;
+    uint8_t devAddr;    //which device (1-4)
+    uint8_t devType;    //pot or greenhouse
     float temperature;
     float humidity;
     float soil_moisture;
@@ -110,10 +113,20 @@ void setup() {
     esp_now_register_recv_cb(onDataRecv);
 
     esp_now_peer_info_t peerInfo = {};
-    memcpy(peerInfo.peer_addr, xiaoMAC, 6);
+    void addPeer(uint8_t *mac) {
+    esp_now_peer_info_t peerInfo = {};
+    memcpy(peerInfo.peer_addr, mac, 6);
     peerInfo.channel = 0;
     peerInfo.encrypt = false;
     esp_now_add_peer(&peerInfo);
+}
+
+addPeer(pot1MAC);
+addPeer(pot2MAC);
+addPeer(pot3MAC);
+addPeer(greenhouseMAC);
+    peerInfo.channel = 0;
+    peerInfo.encrypt = false;
 
     // ----- LVGL -----
     lv_init();
@@ -323,7 +336,12 @@ void update_pot_cb(lv_event_t * e)
     packet.moisture = lv_spinbox_get_value(spin);
     packet.tolerance = getToleranceValue(dropdown);
 
-    esp_now_send(xiaoMAC, (uint8_t*)&packet, sizeof(packet));
+    uint8_t *targetMAC = NULL;
+    if (potNumber == 1) targetMAC = pot1MAC;
+    else if (potNumber == 2) targetMAC = pot2MAC;
+    else if (potNumber == 3) targetMAC = pot3MAC;
+    esp_now_send(targetMAC, (uint8_t*)&packet, sizeof(packet));
+    esp_now_send(greenhouseMAC, (uint8_t*)&packet, sizeof(packet));
 }
 
 // ===================== GREENHOUSE UPDATE =============================
@@ -339,12 +357,28 @@ void allupdate_cb(lv_event_t * e)
     esp_now_send(xiaoMAC, (uint8_t*)&packet, sizeof(packet));
 }
 
-void onDataRecv(const uint8_t *, const uint8_t *incomingData, int len) {
-
+void onDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
+{
     if (len != sizeof(status_packet_t)) return;
 
-    memcpy((void*)&rxData, incomingData, sizeof(rxData));
-    newData = true;
+    status_packet_t data;
+    memcpy(&data, incomingData, sizeof(data));
+
+    switch(data.devAddr)
+    {
+        case 1:
+            // pot 1 data
+            break;
+        case 2:
+            // pot 2
+            break;
+        case 3:
+            // pot 3
+            break;
+        case 4:
+            // greenhouse
+            break;
+    }
 
     // ----- SANITY CHECK -----
     Serial.println("=== NEW STATUS RECEIVED ===");
