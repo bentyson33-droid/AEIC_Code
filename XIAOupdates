@@ -35,8 +35,10 @@ DHT dht(DHTPIN, DHTTYPE);
 
 // ================= PACKETS =================
 typedef struct __attribute__((packed)) {
-    uint8_t set;
-} moisture_packet_t;
+    uint8_t type;
+    uint8_t moisture;
+    uint8_t tolerance;
+} pot_settings_packet_t;
 
 moisture_packet_t msp;
 
@@ -53,20 +55,15 @@ typedef struct __attribute__((packed)) {
 status_packet_t txData;
 
 // ================= RECEIVE COMMAND =================
-void onDataRecv(const uint8_t *, const uint8_t *data, int len) {
+void onDataRecv(const uint8_t *, const uint8_t *data, int len)
+{
+    if (len != sizeof(pot_settings_packet_t)) return;
 
-    if (len != sizeof(moisture_packet_t)) return;
+    pot_settings_packet_t packet;
+    memcpy(&packet, data, len);
+    if (packet.type != 1) return;
+    moisture_set = packet.moisture;
 
-    memcpy(&msp, data, len);
-
-    // if (cmd.targetAddr != DEVICE_ADDR) return;
-
-    if (msp.set != moisture_set)
-        moisture_set=msp.set;
-    // if (cmd.command == CMD_VALVE2)
-    //     digitalWrite(valve2Pin, cmd.value ? HIGH : LOW);
-    // if (cmd.command == CMD_VALVE3)
-    //     digitalWrite(valve3Pin, cmd.value ? HIGH : LOW);
     Serial.print(moisture_set);
     Serial.print(" = ");
     Serial.println(msp.set);
@@ -138,7 +135,7 @@ void loop() {
     delay(300);
 
     // Counting loop for sending every 10 Cycles or 5 seconds
-    if (sendCount = 9){
+    if (sendCount == 9){
         sendData();
         sendCount=0;
     }
