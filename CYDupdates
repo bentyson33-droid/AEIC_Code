@@ -87,7 +87,7 @@ float calculateTolerance(float target, float tolerancePercent);
 //     moisture_packet_t cmd;
 //     cmd.moisture = moisture;
 
-//     esp_now_send(xiaoMAC, (uint8_t*)&cmd, sizeof(cmd));
+//     esp_now_send(targetMAC, (uint8_t*)&cmd, sizeof(cmd));
 //     delay(2500);
 // }
 
@@ -97,7 +97,7 @@ float calculateTolerance(float target, float tolerancePercent);
 //     packet.temp_target = lv_spinbox_get_value(objects.temp_spinbox);
 //     packet.humidity_target = lv_spinbox_get_value(objects.humidity_spinbox);
 
-//     esp_now_send(xiaoMAC, (uint8_t*)&packet, sizeof(packet));
+//     esp_now_send(targetMAC, (uint8_t*)&packet, sizeof(packet));
 // }
 
 // ================= SETUP ========================
@@ -118,7 +118,9 @@ void setup() {
     esp_now_register_recv_cb(onDataRecv);
 
     esp_now_peer_info_t peerInfo = {};
-    void addPeer(uint8_t *mac) {
+}
+
+ void addPeer(uint8_t *mac) {
     esp_now_peer_info_t peerInfo = {};
     memcpy(peerInfo.peer_addr, mac, 6);
     peerInfo.channel = 0;
@@ -337,7 +339,6 @@ void update_pot_cb(lv_event_t * e)
 
     pot_settings_packet_t packet;
     packet.type = 1;
-    packet.pot = potNumber;
     packet.moisture = lv_spinbox_get_value(spin);
     packet.tolerance = getToleranceValue(dropdown);
 
@@ -346,7 +347,6 @@ void update_pot_cb(lv_event_t * e)
     else if (potNumber == 2) targetMAC = pot2MAC;
     else if (potNumber == 3) targetMAC = pot3MAC;
     esp_now_send(targetMAC, (uint8_t*)&packet, sizeof(packet));
-    esp_now_send(greenhouseMAC, (uint8_t*)&packet, sizeof(packet));
 }
 
 // ===================== GREENHOUSE UPDATE =============================
@@ -359,7 +359,7 @@ void allupdate_cb(lv_event_t * e)
     packet.temp = lv_spinbox_get_value(objects.temp_spinbox);
     packet.humidity = lv_spinbox_get_value(objects.humidity_spinbox);
 
-    esp_now_send(xiaoMAC, (uint8_t*)&packet, sizeof(packet));
+    esp_now_send(targetMAC, (uint8_t*)&packet, sizeof(packet));
 }
 
 void onDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
