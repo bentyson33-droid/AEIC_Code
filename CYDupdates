@@ -8,8 +8,13 @@
 #include <math.h>
 
 // ================= DEVICE DEFINES =================
-#define DEVICE_TYPE_CYD  0x02
-#define TARGET_XIAO_ADDR 1
+#define DEV_POT1        1
+#define DEV_POT2        2
+#define DEV_POT3        3
+#define DEV_GREENHOUSE  4
+
+#define TYPE_POT        1
+#define TYPE_GREENHOUSE 2
 
 // ================= XIAO MACS =======================
 uint8_t pot1MAC[] = {0x24,0x6F,0x28,0xAA,0x11,0x01};
