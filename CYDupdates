@@ -1,0 +1,354 @@
+#include <Arduino.h>
+#include <WiFi.h>
+#include <esp_now.h>
+#include <lvgl.h>
+#include <TFT_eSPI.h>
+#include <XPT2046_Touchscreen.h>
+#include "ui.h"
+#include <math.h>
+
+// ================= DEVICE DEFINES =================
+#define DEVICE_TYPE_CYD  0x02
+#define TARGET_XIAO_ADDR 1
+float moisture = 50;
+
+// ================= XIAO MAC =======================
+uint8_t xiaoMAC[] = {0x58, 0x8C, 0x81, 0xA4, 0xCC, 0x14};
+
+// ================= PACKETS ========================
+typedef struct __attribute__((packed)) {
+    uint8_t type;
+    uint8_t pot;
+    uint8_t moisture;
+    uint8_t tolerance;
+} pot_settings_packet_t;
+
+typedef struct __attribute__((packed)) {
+    uint8_t type; 
+    uint8_t temp;
+    uint8_t humidity;
+} greenhouse_packet_t;
+
+typedef struct __attribute__((packed)) {
+    uint8_t devAddr;
+    uint8_t devType;
+    float temperature;
+    float humidity;
+    float soil_moisture;
+    uint8_t valveState;
+} status_packet_t;
+
+static volatile status_packet_t rxData;
+static volatile bool newData = false;
+static float lastTempF = 0.0f;
+static float lastHumidity = 0.0f;
+static float lastMoisture = 0.0f;
+static bool dataValid = false;
+
+// ================= TOUCHSCREEN ==================
+#define XPT2046_IRQ 36
+#define XPT2046_MOSI 32
+#define XPT2046_MISO 39
+#define XPT2046_CLK 25
+#define XPT2046_CS 33
+
+SPIClass touchscreenSPI = SPIClass(VSPI);
+XPT2046_Touchscreen touchscreen(XPT2046_CS, XPT2046_IRQ);
+
+// ================= DISPLAY ======================
+#define SCREEN_WIDTH  240
+#define SCREEN_HEIGHT 320
+#define DRAW_BUF_SIZE (SCREEN_WIDTH * SCREEN_HEIGHT / 10 * (LV_COLOR_DEPTH / 8))
+uint32_t draw_buf[DRAW_BUF_SIZE / 4];
+TFT_eSPI tft = TFT_eSPI();
+
+// ================= PROTOTYPES ===================
+void touchscreen_read(lv_indev_t *, lv_indev_data_t *);
+void onDataRecv(const uint8_t *, const uint8_t *, int);
+void enterbutton_cb(lv_event_t * e);
+void homebutton_cb(lv_event_t * e);
+void moisture_plus_cb(lv_event_t * e);
+void moisture_minus_cb(lv_event_t * e);
+void update_pot_cb(lv_event_t * e);
+void allupdate_cb(lv_event_t * e);
+int getToleranceValue(lv_obj_t * dropdown);
+float calculateTolerance(float target, float tolerancePercent);
+
+// ================= SEND COMMAND =================
+// void sendMoistureTarget() {
+//     moisture_packet_t cmd;
+//     cmd.moisture = moisture;
+
+//     esp_now_send(xiaoMAC, (uint8_t*)&cmd, sizeof(cmd));
+//     delay(2500);
+// }
+
+//void sendGreenHouseTarget() {
+//     greenhouse_packet_t packet;
+//     packet.type = 0;
+//     packet.temp_target = lv_spinbox_get_value(objects.temp_spinbox);
+//     packet.humidity_target = lv_spinbox_get_value(objects.humidity_spinbox);
+
+//     esp_now_send(xiaoMAC, (uint8_t*)&packet, sizeof(packet));
+// }
+
+// ================= SETUP ========================
+void setup() {
+
+    Serial.begin(9600);
+    WiFi.mode(WIFI_STA);
+
+    // Serial.print("CYD MAC: ");
+    // Serial.println(WiFi.macAddress());
+
+    // ----- ESP-NOW -----
+    if (esp_now_init() != ESP_OK) {
+        Serial.println("ESP-NOW init failed");
+        return;
+    }
+
+    esp_now_register_recv_cb(onDataRecv);
+
+    esp_now_peer_info_t peerInfo = {};
+    memcpy(peerInfo.peer_addr, xiaoMAC, 6);
+    peerInfo.channel = 0;
+    peerInfo.encrypt = false;
+    esp_now_add_peer(&peerInfo);
+
+    // ----- LVGL -----
+    lv_init();
+
+    touchscreenSPI.begin(XPT2046_CLK, XPT2046_MISO, XPT2046_MOSI, XPT2046_CS);
+    touchscreen.begin(touchscreenSPI);
+    touchscreen.setRotation(2);
+
+    lv_display_t *disp = lv_tft_espi_create(
+    SCREEN_WIDTH, SCREEN_HEIGHT, draw_buf, sizeof(draw_buf));
+    lv_display_set_rotation(disp, LV_DISPLAY_ROTATION_270);
+
+    lv_indev_t *indev = lv_indev_create();
+    lv_indev_set_type(indev, LV_INDEV_TYPE_POINTER);
+    lv_indev_set_read_cb(indev, touchscreen_read);
+
+    // Initialize EEZ UI
+    ui_init();
+
+    lv_obj_add_event_cb(objects.enterbutton, enterbutton_cb, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_event_cb(objects.homebutton, homebutton_cb, LV_EVENT_CLICKED, NULL);
+
+    // POT 1
+    lv_obj_add_event_cb(objects.plusmoisturepot1, moisture_plus_cb, LV_EVENT_PRESSED, objects.spinbox1);
+    lv_obj_add_event_cb(objects.plusmoisturepot1, moisture_plus_cb, LV_EVENT_LONG_PRESSED_REPEAT, objects.spinbox1);
+    lv_obj_add_event_cb(objects.minusmoisturepot1, moisture_minus_cb, LV_EVENT_PRESSED, objects.spinbox1);
+    lv_obj_add_event_cb(objects.minusmoisturepot1, moisture_minus_cb, LV_EVENT_LONG_PRESSED_REPEAT, objects.spinbox1);
+    lv_obj_clear_flag(objects.spinbox1, LV_OBJ_FLAG_CLICK_FOCUSABLE);
+    lv_obj_set_style_text_align(objects.spinbox1, LV_TEXT_ALIGN_CENTER, 0);
+
+    // POT 2
+    lv_obj_add_event_cb(objects.plusmoisturepot2, moisture_plus_cb, LV_EVENT_PRESSED, objects.spinbox2);
+    lv_obj_add_event_cb(objects.plusmoisturepot2, moisture_plus_cb, LV_EVENT_LONG_PRESSED_REPEAT, objects.spinbox2);
+    lv_obj_add_event_cb(objects.minusmoisturepot2, moisture_minus_cb, LV_EVENT_PRESSED, objects.spinbox2);
+    lv_obj_add_event_cb(objects.minusmoisturepot2, moisture_minus_cb, LV_EVENT_LONG_PRESSED_REPEAT, objects.spinbox2);
+    lv_obj_clear_flag(objects.spinbox2, LV_OBJ_FLAG_CLICK_FOCUSABLE);
+    lv_obj_set_style_text_align(objects.spinbox2, LV_TEXT_ALIGN_CENTER, 0);
+
+    // POT 3
+    lv_obj_add_event_cb(objects.plusmoisturepot3, moisture_plus_cb, LV_EVENT_PRESSED, objects.spinbox3);
+    lv_obj_add_event_cb(objects.plusmoisturepot3, moisture_plus_cb, LV_EVENT_LONG_PRESSED_REPEAT, objects.spinbox3);
+    lv_obj_add_event_cb(objects.minusmoisturepot3, moisture_minus_cb, LV_EVENT_PRESSED, objects.spinbox3);
+    lv_obj_add_event_cb(objects.minusmoisturepot3, moisture_minus_cb, LV_EVENT_LONG_PRESSED_REPEAT, objects.spinbox3);
+    lv_obj_clear_flag(objects.spinbox3, LV_OBJ_FLAG_CLICK_FOCUSABLE);
+    lv_obj_set_style_text_align(objects.spinbox3, LV_TEXT_ALIGN_CENTER, 0);
+
+    // TEMP
+    lv_obj_add_event_cb(objects.plustemp, moisture_plus_cb, LV_EVENT_PRESSED, objects.temp_spinbox);
+    lv_obj_add_event_cb(objects.plustemp, moisture_plus_cb, LV_EVENT_LONG_PRESSED_REPEAT, objects.temp_spinbox);
+    lv_obj_add_event_cb(objects.minustemp, moisture_minus_cb, LV_EVENT_PRESSED, objects.temp_spinbox);
+    lv_obj_add_event_cb(objects.minustemp, moisture_minus_cb, LV_EVENT_LONG_PRESSED_REPEAT, objects.temp_spinbox);
+    lv_obj_clear_flag(objects.temp_spinbox, LV_OBJ_FLAG_CLICK_FOCUSABLE);
+    lv_obj_set_style_text_align(objects.temp_spinbox, LV_TEXT_ALIGN_CENTER, 0);
+
+    // HUMIDITY
+    lv_obj_add_event_cb(objects.plushumidity, moisture_plus_cb, LV_EVENT_PRESSED, objects.humidity_spinbox);
+    lv_obj_add_event_cb(objects.plushumidity, moisture_plus_cb, LV_EVENT_LONG_PRESSED_REPEAT, objects.humidity_spinbox);
+    lv_obj_add_event_cb(objects.minushumidity, moisture_minus_cb, LV_EVENT_PRESSED, objects.humidity_spinbox);
+    lv_obj_add_event_cb(objects.minushumidity, moisture_minus_cb, LV_EVENT_LONG_PRESSED_REPEAT, objects.humidity_spinbox);
+    lv_obj_clear_flag(objects.humidity_spinbox, LV_OBJ_FLAG_CLICK_FOCUSABLE);
+    lv_obj_set_style_text_align(objects.humidity_spinbox, LV_TEXT_ALIGN_CENTER, 0);
+
+    // POT UPDATE BUTTONS
+    lv_obj_add_event_cb(objects.update1, update_pot_cb, LV_EVENT_CLICKED, (void*)1);
+    lv_obj_add_event_cb(objects.update2, update_pot_cb, LV_EVENT_CLICKED, (void*)2);
+    lv_obj_add_event_cb(objects.update3, update_pot_cb, LV_EVENT_CLICKED, (void*)3);
+
+    // GREENHOUSE UPDATE BUTTON
+    lv_obj_add_event_cb(objects.allupdate, allupdate_cb, LV_EVENT_CLICKED, NULL);   
+}
+
+// ================= LOOP ==========================
+void loop() {
+
+    //sendMoistureTarget()
+    bool valid = false;
+
+    if (newData) {
+        newData = false;
+
+        valid =
+            !isnan(rxData.temperature) &&
+            !isnan(rxData.humidity);
+
+        if (valid) {
+            lastTempF = rxData.temperature;
+            lastHumidity = rxData.humidity;
+            lastMoisture = rxData.soil_moisture;
+            dataValid = true;
+        }
+    }
+
+    if (dataValid) {
+        float lasttempC = (lastTempF - 32.0f) * 5.0f / 9.0f;
+        float svp = 0.6108 * exp((17.27 * lasttempC) / (lasttempC + 237.3));
+        float vpd = svp * (1 - lastHumidity / 100.0f);
+
+        lv_label_set_text_fmt(objects.pot1_temp, "%.1f °F / %.1f °C", lastTempF, lasttempC);
+        lv_label_set_text_fmt(objects.pot1_humidity, "%.1f %%", lastHumidity);
+        lv_label_set_text_fmt(objects.pot1_moisture, "%.1f %%", lastMoisture);
+        lv_label_set_text_fmt(objects.pot1_vpd, "%.2f kPa", vpd);
+    }
+
+    if (!valid) {
+        lv_obj_set_style_text_color(objects.pot1_temp,
+            lv_color_hex(0xFF0000), LV_PART_MAIN);
+        lv_obj_set_style_text_color(objects.pot1_humidity,
+            lv_color_hex(0xFF0000), LV_PART_MAIN);
+    } else {
+        lv_obj_set_style_text_color(objects.pot1_temp,
+            lv_color_hex(0x000000), LV_PART_MAIN);
+        lv_obj_set_style_text_color(objects.pot1_humidity,
+            lv_color_hex(0x000000), LV_PART_MAIN);
+    }
+
+    lv_timer_handler();
+    lv_tick_inc(5);
+    delay(5);
+}
+
+// ========================= TOUCH =====================================
+void touchscreen_read(lv_indev_t *, lv_indev_data_t *data) {
+
+    if (touchscreen.touched()) {
+        TS_Point p = touchscreen.getPoint();
+
+        data->state = LV_INDEV_STATE_PRESSED;
+        data->point.x = map(p.x, 200, 3700, 1, SCREEN_WIDTH);
+        data->point.y = map(p.y, 240, 3800, 1, SCREEN_HEIGHT);
+    } else {
+        data->state = LV_INDEV_STATE_RELEASED;
+    }
+}
+
+// ====================== CALLBACKS ====================================
+void enterbutton_cb(lv_event_t * e) {
+    if (lv_event_get_code(e) == LV_EVENT_CLICKED) {
+        loadScreen(SCREEN_ID_MAIN);
+    }
+}
+
+void homebutton_cb(lv_event_t * e) {
+    if (lv_event_get_code(e) == LV_EVENT_CLICKED) {
+        loadScreen(SCREEN_ID_SPLASH);
+    }
+}
+
+void moisture_plus_cb(lv_event_t * e)
+{
+    lv_obj_t * spin = (lv_obj_t *)lv_event_get_user_data(e);
+    lv_spinbox_increment(spin);
+}
+
+void moisture_minus_cb(lv_event_t * e)
+{
+    lv_obj_t * spin = (lv_obj_t *)lv_event_get_user_data(e);
+    lv_spinbox_decrement(spin);
+}
+
+// ========================== TOLERANCE ================================
+float calculateTolerance(float target, float tolerancePercent)
+{
+    // Returns absolute tolerance value
+    return target * (tolerancePercent / 100.0f);
+}
+
+// ===================== GET TOLERANCE VALUE ===========================
+int getToleranceValue(lv_obj_t * dropdown)
+{
+    uint16_t selected = lv_dropdown_get_selected(dropdown);
+
+    switch(selected)
+    {
+        case 0: return 1;  // +/-1%
+        case 1: return 3;  // +/-3%
+        case 2: return 5;  // +/-5%
+        default: return 1;
+    }
+}
+
+// ===================== UPDATE POT CALLBACK ===========================
+void update_pot_cb(lv_event_t * e)
+{
+    if (lv_event_get_code(e) != LV_EVENT_CLICKED) return;
+
+    uint8_t potNumber = (uint32_t)lv_event_get_user_data(e);
+
+    lv_obj_t * spin = NULL;
+    lv_obj_t * dropdown = NULL;
+
+    if (potNumber == 1) {
+        spin = objects.spinbox1;
+        dropdown = objects.tolerancebox1;
+    }
+    else if (potNumber == 2) {
+        spin = objects.spinbox2;
+        dropdown = objects.tolerancebox2;
+    }
+    else if (potNumber == 3) {
+        spin = objects.spinbox3;
+        dropdown = objects.tolerancebox3;
+    }
+
+    pot_settings_packet_t packet;
+    packet.type = 1;
+    packet.pot = potNumber;
+    packet.moisture = lv_spinbox_get_value(spin);
+    packet.tolerance = getToleranceValue(dropdown);
+
+    esp_now_send(xiaoMAC, (uint8_t*)&packet, sizeof(packet));
+}
+
+// ===================== GREENHOUSE UPDATE =============================
+void allupdate_cb(lv_event_t * e)
+{
+    if (lv_event_get_code(e) != LV_EVENT_CLICKED) return;
+
+    greenhouse_packet_t packet;
+    packet.type = 2;
+    packet.temp = lv_spinbox_get_value(objects.temp_spinbox);
+    packet.humidity = lv_spinbox_get_value(objects.humidity_spinbox);
+
+    esp_now_send(xiaoMAC, (uint8_t*)&packet, sizeof(packet));
+}
+
+void onDataRecv(const uint8_t *, const uint8_t *incomingData, int len) {
+
+    if (len != sizeof(status_packet_t)) return;
+
+    memcpy((void*)&rxData, incomingData, sizeof(rxData));
+    newData = true;
+
+    // ----- SANITY CHECK -----
+    Serial.println("=== NEW STATUS RECEIVED ===");
+    Serial.print("Temperature: "); Serial.println(rxData.temperature);
+    Serial.print("Humidity: "); Serial.println(rxData.humidity);
+    Serial.print("Soil Moisture: "); Serial.println(rxData.soil_moisture);
+}
