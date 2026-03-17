@@ -24,9 +24,9 @@ bool valveStates [3];
 uint8_t water_level = 50;
 int sendCount = 0;
 // ================= PINS =================
-#define fanPin D1
-#define lightPin D2
-#define pumpPin D3
+#define fanPin A0
+#define lightPin A1
+#define pumpPin A2
 #define humidifierPin D4
 #define waterlevelEcho D7
 #define waterlevelTrig D10
@@ -41,11 +41,11 @@ set_packet_t setPoints;
 typedef struct __attribute__((packed)) {
     uint8_t devAddr;
     uint8_t devType;
-    uint8_t fan_state;
-    uint8_t pump_state;
-    uint8_t humidifier_state;
-    uint8_t light_level;
-    uint8_t water_level;
+    int fan_state;
+    int pump_state;
+    boolean humidifier_state;
+    int light_level;
+    float water_level;
 } status_packet_t;
 
 status_packet_t txData;
@@ -94,21 +94,25 @@ void onDataRecv(const uint8_t *, const uint8_t *data, int len) {
 void sendStatusData() {
     txData.devAddr = DEVICE_ADDR;
     txData.devType = DEVICE_TYPE_XIAO;
-    txData.fan_state = digitalRead(fanPin);
-    txData.pump_state = digitalRead(pumpPin);
+    txData.fan_state = analogRead(fanPin);
+    txData.pump_state = analogRead(pumpPin);
     txData.humidifier_state = digitalRead(humidifierPin);
-    txData.light_level = digitalRead(lightPin);
-    txData.water_level;
+    txData.light_level = analogRead(lightPin);
+    txData.water_level = 50;
 
     esp_now_send(cydMAC, (uint8_t*)&txData, sizeof(txData));
 }
 
-// void sendValveData() {
-//     valveState.devAddr = DEVICE_ADDR;
-//     valveState.valve_state = digitalRead(valvePin);
+// ================= PWM Command =========================
+void pwm(uint8_t outputPin, uint32_t frequency, float dutyCycle) {
+  for(;;){
+    pinMode(outputPin, HIGH);
+    delay((1/frequency)*dutyCycle);
+    pinMode(outputPin, LOW);
+    delay((1/frequency)*(1-dutyCycle));
+  }
+}
 
-//     esp_now_send(pumpMAC, (uint8_t*)&valveState,sizeof(valveState));
-// }
 // ================= SETUP =================
 void setup() {
     Serial.begin(9600);
@@ -150,7 +154,7 @@ void loop() {
         }
       }
   delay(100);
-
+  
   // Finding average temp & humidity
   avg_temp = 0;
   avg_humid = 0;

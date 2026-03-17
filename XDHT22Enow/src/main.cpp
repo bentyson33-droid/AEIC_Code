@@ -146,8 +146,6 @@ void loop() {
     //     digitalWrite(valvePin, LOW);
     //     sendValveData();
     // }
-
-
     
     delay(300);
 
