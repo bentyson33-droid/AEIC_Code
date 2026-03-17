@@ -40,16 +40,13 @@ typedef struct __attribute__((packed)) {
     uint8_t tolerance;
 } pot_settings_packet_t;
 
-moisture_packet_t msp;
-
 typedef struct __attribute__((packed)) {
     uint8_t devAddr;
     uint8_t devType;
-    uint8_t valve_state;
     float temperature;
     float humidity;
     float soil_moisture;
-
+    uint8_t valve_state;
 } status_packet_t;
 
 status_packet_t txData;
@@ -63,12 +60,8 @@ void onDataRecv(const uint8_t *, const uint8_t *data, int len)
     memcpy(&packet, data, len);
     if (packet.type != 1) return;
     moisture_set = packet.moisture;
-
-    Serial.print(moisture_set);
-    Serial.print(" = ");
-    Serial.println(msp.set);
-    delay(1000);
 }
+
 // =================== SEND COMMAND ================
 void sendData() {
     txData.devAddr = DEVICE_ADDR;
