@@ -1,0 +1,148 @@
+#include <Arduino.h>
+#include <WiFi.h>
+#include <esp_now.h>
+#include "DHT.h"
+
+// ================= DEVICE DEFINES =================
+#define DEVICE_ADDR 1
+#define DEVICE_TYPE_XIAO 0x01
+
+// ================= MAC ADDRESSES =================
+// REPLACE with your CYD MAC
+uint8_t cydMAC[] = {0x5C, 0x01, 0x3B, 0x50, 0x11, 0xD0}; //5C:01:3B:50:11:D0
+
+// ================= COMMAND DEFINES =================
+// #define CMD_VALVE1  1
+// #define CMD_VALVE2  2
+// #define CMD_VALVE3  3
+
+// ================= VARIABLES ==================
+uint8_t moisture_set =0;
+float t,h,m =0;
+uint8_t sendCount =0;
+
+// ================= PINS =================
+#define DHTPIN D1
+#define DHTTYPE DHT22
+
+const int valvePin = D3;
+// const int valve2Pin = D5;
+// const int valve3Pin = D6;
+const int moisturePin = A2;
+// const int lightPin = D10;
+
+DHT dht(DHTPIN, DHTTYPE);
+
+// ================= PACKETS =================
+typedef struct __attribute__((packed)) {
+    uint8_t set;
+} moisture_packet_t;
+
+moisture_packet_t msp;
+
+typedef struct __attribute__((packed)) {
+    uint8_t devAddr;
+    uint8_t devType;
+    uint8_t valve_state;
+    float temperature;
+    float humidity;
+    float soil_moisture;
+
+} status_packet_t;
+
+status_packet_t txData;
+
+// ================= RECEIVE COMMAND =================
+void onDataRecv(const uint8_t *, const uint8_t *data, int len) {
+
+    if (len != sizeof(moisture_packet_t)) return;
+
+    memcpy(&msp, data, len);
+
+    // if (cmd.targetAddr != DEVICE_ADDR) return;
+
+    if (msp.set != moisture_set)
+        moisture_set=msp.set;
+    // if (cmd.command == CMD_VALVE2)
+    //     digitalWrite(valve2Pin, cmd.value ? HIGH : LOW);
+    // if (cmd.command == CMD_VALVE3)
+    //     digitalWrite(valve3Pin, cmd.value ? HIGH : LOW);
+    Serial.print(moisture_set);
+    Serial.print(" = ");
+    Serial.println(msp.set);
+    delay(1000);
+}
+// =================== SEND COMMAND ================
+void sendData() {
+    txData.devAddr = DEVICE_ADDR;
+    txData.devType = DEVICE_TYPE_XIAO;
+    txData.valve_state = digitalRead(valvePin);
+    txData.temperature = t;
+    txData.humidity = h;
+    txData.soil_moisture = m;
+
+    esp_now_send(cydMAC, (uint8_t*)&txData, sizeof(txData));
+}
+// ================= SETUP =================
+void setup() {
+    Serial.begin(9600);
+    delay(100);
+    // Serial.println("Yo");
+    // delay(1000);
+    WiFi.mode(WIFI_STA);
+
+    dht.begin();
+
+    pinMode(valvePin, OUTPUT);
+
+    if (esp_now_init() != ESP_OK) {
+        Serial.println("ESP-NOW init failed");
+        return;
+    }
+
+    esp_now_register_recv_cb(onDataRecv);
+
+    esp_now_peer_info_t peerInfo = {};
+    memcpy(peerInfo.peer_addr, cydMAC, 6);
+    peerInfo.channel = 0;
+    peerInfo.encrypt = false;
+    esp_now_add_peer(&peerInfo);
+}
+
+// ================= LOOP =================
+void loop() {
+    h = dht.readHumidity();
+    t = dht.readTemperature(true);
+    m=analogRead(moisturePin);
+    delay(100);
+
+    // Converitng reading to 0-100 scale
+    // For moisture Saturation (%)
+    m=1-((m-1600)/2495);
+    delay(100);
+
+    // if (m< (moisture_set-5)){
+    //     digitalWrite(valvePin, HIGH);
+    // }
+    // else if (m> (moisture_set+5)){
+    //     digitalWrite(valvePin, LOW);
+    // }
+
+    
+    // Serial.println(moisture_set);
+    // Serial.println(h);
+    // Serial.println(t);
+    // Serial.println(m);
+    // Serial.println("");
+    
+    delay(300);
+
+    // Counting loop for sending every 10 Cycles or 5 seconds
+    if (sendCount = 9){
+        sendData();
+        sendCount=0;
+    }
+    else {
+        sendCount += 1;
+    }
+}
