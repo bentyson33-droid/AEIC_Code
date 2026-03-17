@@ -10,6 +10,7 @@
 // ================= MAC ADDRESSES =================
 // REPLACE with your CYD MAC
 uint8_t cydMAC[] = {0x5C, 0x01, 0x3B, 0x50, 0x11, 0xD0}; //5C:01:3B:50:11:D0
+// uint8_t pumpMAC[] = {0x, 0x, 0x, 0x, 0x, 0x};
 
 // ================= COMMAND DEFINES =================
 // #define CMD_VALVE1  1
@@ -52,6 +53,13 @@ typedef struct __attribute__((packed)) {
 
 status_packet_t txData;
 
+typedef struct __attribute__((packed)) {
+    uint8_t devAddr;
+    uint8_t valve_state;
+} valve_packet_t;
+
+valve_packet_t valveState;
+
 // ================= RECEIVE COMMAND =================
 void onDataRecv(const uint8_t *, const uint8_t *data, int len) {
 
@@ -73,7 +81,7 @@ void onDataRecv(const uint8_t *, const uint8_t *data, int len) {
     delay(1000);
 }
 // =================== SEND COMMAND ================
-void sendData() {
+void sendStatusData() {
     txData.devAddr = DEVICE_ADDR;
     txData.devType = DEVICE_TYPE_XIAO;
     txData.valve_state = digitalRead(valvePin);
@@ -83,6 +91,13 @@ void sendData() {
 
     esp_now_send(cydMAC, (uint8_t*)&txData, sizeof(txData));
 }
+
+// void sendValveData() {
+//     valveState.devAddr = DEVICE_ADDR;
+//     valveState.valve_state = digitalRead(valvePin);
+
+//     esp_now_send(pumpMAC, (uint8_t*)&valveState,sizeof(valveState));
+// }
 // ================= SETUP =================
 void setup() {
     Serial.begin(9600);
@@ -121,30 +136,36 @@ void loop() {
     m=1-((m-1600)/2495);
     delay(100);
 
+    // Check if moisture is within range
+    // And sending an update to pump on valve state change
     // if (m< (moisture_set-5)){
     //     digitalWrite(valvePin, HIGH);
+    //     sendValveData();
     // }
     // else if (m> (moisture_set+5)){
     //     digitalWrite(valvePin, LOW);
+    //     sendValveData();
     // }
 
-    
-    // Serial.println(moisture_set);
-    // Serial.println(h);
-    // Serial.println(t);
-    // Serial.println(m);
-    // Serial.println("");
+
     
     delay(300);
 
     // Counting loop for sending every 10 Cycles or 5 seconds
-    if (sendCount = 9){
-        sendData();
+    if (sendCount == 9){
+        sendStatusData();
         sendCount=0;
+        // Checking values from the sensor
+        // Serial.println(moisture_set);
+        // Serial.println(h);
+        // Serial.println(t);
+        // Serial.println(m);
+        // Serial.println("");
     }
     else {
         sendCount += 1;
     }
+    // Serial.println(sendCount);
 }
 
 
