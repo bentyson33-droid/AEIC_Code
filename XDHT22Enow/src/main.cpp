@@ -4,13 +4,13 @@
 #include "DHT.h"
 
 // ================= DEVICE DEFINES =================
-#define DEVICE_ADDR 1
+#define DEVICE_ADDR 2
 #define DEVICE_TYPE_XIAO 0x01
 
 // ================= MAC ADDRESSES =================
 // REPLACE with your CYD MAC
 uint8_t cydMAC[] = {0x5C, 0x01, 0x3B, 0x50, 0x11, 0xD0}; //5C:01:3B:50:11:D0
-// uint8_t pumpMAC[] = {0x, 0x, 0x, 0x, 0x, 0x};
+uint8_t pumpMAC[] = {0xE8, 0xF6, 0x0A, 0x16, 0xFC, 0x30};
 
 // ================= COMMAND DEFINES =================
 // #define CMD_VALVE1  1
@@ -56,25 +56,21 @@ status_packet_t txData;
 typedef struct __attribute__((packed)) {
     uint8_t devAddr;
     uint8_t valve_state;
-} valve_packet_t;
+    float temp;
+    float humidity;
+} pump_packet_t;
 
-valve_packet_t valveState;
+pump_packet_t pumpPacket;
 
 // ================= RECEIVE COMMAND =================
 void onDataRecv(const uint8_t *, const uint8_t *data, int len) {
 
     if (len != sizeof(moisture_packet_t)) return;
-
     memcpy(&msp, data, len);
-
-    // if (cmd.targetAddr != DEVICE_ADDR) return;
-
-    if (msp.set != moisture_set)
+    if (msp.set != moisture_set){
         moisture_set=msp.set;
-    // if (cmd.command == CMD_VALVE2)
-    //     digitalWrite(valve2Pin, cmd.value ? HIGH : LOW);
-    // if (cmd.command == CMD_VALVE3)
-    //     digitalWrite(valve3Pin, cmd.value ? HIGH : LOW);
+    }
+    // Sanity Check for recieved values
     Serial.print(moisture_set);
     Serial.print(" = ");
     Serial.println(msp.set);
@@ -92,12 +88,14 @@ void sendStatusData() {
     esp_now_send(cydMAC, (uint8_t*)&txData, sizeof(txData));
 }
 
-// void sendValveData() {
-//     valveState.devAddr = DEVICE_ADDR;
-//     valveState.valve_state = digitalRead(valvePin);
+void sendValveData() {
+    pumpPacket.devAddr = DEVICE_ADDR;
+    pumpPacket.valve_state = digitalRead(valvePin);
+    pumpPacket.temp = t;
+    pumpPacket.humidity = h;
 
-//     esp_now_send(pumpMAC, (uint8_t*)&valveState,sizeof(valveState));
-// }
+    esp_now_send(pumpMAC, (uint8_t*)&pumpPacket,sizeof(pumpPacket));
+}
 // ================= SETUP =================
 void setup() {
     Serial.begin(9600);
@@ -126,14 +124,19 @@ void setup() {
 
 // ================= LOOP =================
 void loop() {
-    h = dht.readHumidity();
-    t = dht.readTemperature(true);
-    m=analogRead(moisturePin);
+    // h = dht.readHumidity();
+    // t = dht.readTemperature(true);
+    // m=analogRead(moisturePin);
+
+    h = 60;
+    t = 60;
+    m = 60;
+
     delay(100);
 
     // Converitng reading to 0-100 scale
     // For moisture Saturation (%)
-    m=1-((m-1600)/2495);
+    // m=1-((m-1600)/2495);
     delay(100);
 
     // Check if moisture is within range
@@ -154,11 +157,11 @@ void loop() {
         sendStatusData();
         sendCount=0;
         // Checking values from the sensor
-        // Serial.println(moisture_set);
-        // Serial.println(h);
-        // Serial.println(t);
-        // Serial.println(m);
-        // Serial.println("");
+        Serial.println(moisture_set);
+        Serial.println(h);
+        Serial.println(t);
+        Serial.println(m);
+        Serial.println("");
     }
     else {
         sendCount += 1;

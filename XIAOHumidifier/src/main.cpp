@@ -9,18 +9,14 @@
 // ================= MAC ADDRESSES =================
 // REPLACE with your CYD MAC
 uint8_t cydMAC[] = {0x5C, 0x01, 0x3B, 0x50, 0x11, 0xD0}; //5C:01:3B:50:11:D0
-// uint8_t pumpMAC[] = {0x, 0x, 0x, 0x, 0x, 0x};
 
 // ================= COMMAND DEFINES =================
 
 // ================= VARIABLES ==================
 float temp_set = 65;
-float avg_temp = 65;
-float temps [3];
 float humid_set = 50;
+float avg_temp = 65;
 float avg_humid = 50;
-float humidities [3];
-bool valveStates [3];
 uint8_t water_level = 50;
 int sendCount = 0;
 // ================= PINS =================
@@ -58,6 +54,13 @@ typedef struct __attribute__((packed)) {
 } sensor_packet_t;
 
 sensor_packet_t SensorData;
+// Creating Packets for each pot
+sensor_packet_t pot1;
+sensor_packet_t pot2;
+sensor_packet_t pot3;
+
+// Put all 3 in a structure
+sensor_packet_t potData[3] = {pot1, pot2, pot3};
 
 // ================= RECEIVE COMMAND =================
 void onDataRecv(const uint8_t *, const uint8_t *data, int len) {
@@ -79,13 +82,12 @@ void onDataRecv(const uint8_t *, const uint8_t *data, int len) {
       // Serial.println(tsp.set);
     }
     if (len == sizeof(sensor_packet_t)){
-      temps[SensorData.devAddr-1] = SensorData.temp;
-
-      humidities[SensorData.devAddr-1] = SensorData.humidity;
-
-      valveStates[SensorData.devAddr-1] = SensorData.valve_state;
-      
-      // memcpy(&valveState, data, len);
+      // Copy Data to memory
+      memcpy(&SensorData, data, len);
+      // Set the values in the sturctures to the new values
+      potData[SensorData.devAddr-1].humidity = SensorData.humidity;
+      potData[SensorData.devAddr-1].temp = SensorData.temp;
+      potData[SensorData.devAddr-1].valve_state = SensorData.valve_state;
     }
 
     delay(1000);
@@ -144,35 +146,26 @@ void setup() {
 
 // ================= LOOP =================
 void loop() {
-  for (int i=0; i<3; i++){
-        if (valveStates[i]==1){
-          pinMode(pumpPin, HIGH);
-          break;
-        }
-        else {
-          pinMode(pumpPin,LOW);
-        }
-      }
   delay(100);
   
   // Finding average temp & humidity
   avg_temp = 0;
   avg_humid = 0;
   for (int i=0; i<3; i++){
-    avg_temp = avg_temp + temps[i];
-    avg_humid = avg_humid + humidities[i];
+    avg_temp = avg_temp + potData[i].temp;
+    avg_humid = avg_humid + potData[i].humidity;
   }
   avg_temp=avg_temp/3;
   avg_humid=avg_humid/3;
   delay(100);
-
+// Checking Temp to turn on/off fan
   if (avg_temp > temp_set + 5){
     pinMode(fanPin, HIGH);
   }
   else if (avg_temp < temp_set + 5){
     pinMode(fanPin, LOW);
   }
-
+// Chekcing Humidity to turn on/off humidifer
   if (avg_humid < humid_set + 5){
     pinMode(humidifierPin, HIGH);
   }
@@ -180,6 +173,15 @@ void loop() {
     pinMode(humidifierPin, LOW);
   }
   delay(300);
+// Turning the pump on if any valve is open
+  if (potData[0].valve_state==1 ||
+      potData[1].valve_state==1 ||
+      potData[2].valve_state==1){
+        analogWrite(pumpPin, 255);
+  }
+  else {
+    analogWrite(pumpPin, 0);
+  }
 
   // Counting loop for sending every 10 Cycles or  seconds
   if (sendCount == 9){
