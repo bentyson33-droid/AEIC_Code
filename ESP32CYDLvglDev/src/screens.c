@@ -471,7 +471,7 @@ void create_screen_main() {
                                             // allupdate
                                             lv_obj_t *obj = lv_button_create(parent_obj);
                                             objects.allupdate = obj;
-                                            lv_obj_set_pos(obj, 74, 109);
+                                            lv_obj_set_pos(obj, 224, 24);
                                             lv_obj_set_size(obj, 66, 35);
                                             {
                                                 lv_obj_t *parent_obj = obj;
@@ -487,10 +487,28 @@ void create_screen_main() {
                                             }
                                         }
                                         {
+                                            // tolerancehumidity
+                                            lv_obj_t *obj = lv_dropdown_create(parent_obj);
+                                            objects.tolerancehumidity = obj;
+                                            lv_obj_set_pos(obj, 62, 96);
+                                            lv_obj_set_size(obj, 79, LV_SIZE_CONTENT);
+                                            lv_dropdown_set_options(obj, "+/- 1%\n+/- 3%\n+/- 5%");
+                                            lv_dropdown_set_selected(obj, 0);
+                                        }
+                                        {
+                                            // tolerancetemp
+                                            lv_obj_t *obj = lv_dropdown_create(parent_obj);
+                                            objects.tolerancetemp = obj;
+                                            lv_obj_set_pos(obj, 62, 29);
+                                            lv_obj_set_size(obj, 79, LV_SIZE_CONTENT);
+                                            lv_dropdown_set_options(obj, "+/- 1%\n+/- 3%\n+/- 5%");
+                                            lv_dropdown_set_selected(obj, 0);
+                                        }
+                                        {
                                             // sethumidity
                                             lv_obj_t *obj = lv_label_create(parent_obj);
                                             objects.sethumidity = obj;
-                                            lv_obj_set_pos(obj, 35, 66);
+                                            lv_obj_set_pos(obj, 20, 73);
                                             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                                             lv_label_set_text(obj, "Humidity (%):");
                                         }
@@ -498,7 +516,7 @@ void create_screen_main() {
                                             // settemp
                                             lv_obj_t *obj = lv_label_create(parent_obj);
                                             objects.settemp = obj;
-                                            lv_obj_set_pos(obj, 5, 15);
+                                            lv_obj_set_pos(obj, 5, 3);
                                             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                                             lv_label_set_text(obj, "Temperature (°F):");
                                         }
@@ -506,8 +524,8 @@ void create_screen_main() {
                                             // HumiditySpinbox
                                             lv_obj_t *obj = lv_spinbox_create(parent_obj);
                                             objects.humidity_spinbox = obj;
-                                            lv_obj_set_pos(obj, 146, 53);
-                                            lv_obj_set_size(obj, 50, 40);
+                                            lv_obj_set_pos(obj, 5, 98);
+                                            lv_obj_set_size(obj, 50, 36);
                                             lv_spinbox_set_digit_format(obj, 3, 0);
                                             lv_spinbox_set_range(obj, 0, 100);
                                             lv_spinbox_set_rollover(obj, false);
@@ -518,8 +536,8 @@ void create_screen_main() {
                                             // TempSpinbox
                                             lv_obj_t *obj = lv_spinbox_create(parent_obj);
                                             objects.temp_spinbox = obj;
-                                            lv_obj_set_pos(obj, 146, 3);
-                                            lv_obj_set_size(obj, 50, 40);
+                                            lv_obj_set_pos(obj, 5, 29);
+                                            lv_obj_set_size(obj, 50, 36);
                                             lv_spinbox_set_digit_format(obj, 3, 0);
                                             lv_spinbox_set_range(obj, 0, 100);
                                             lv_spinbox_set_rollover(obj, false);
@@ -530,8 +548,8 @@ void create_screen_main() {
                                             // plushumidity
                                             lv_obj_t *obj = lv_button_create(parent_obj);
                                             objects.plushumidity = obj;
-                                            lv_obj_set_pos(obj, 206, 53);
-                                            lv_obj_set_size(obj, 40, 40);
+                                            lv_obj_set_pos(obj, 156, 78);
+                                            lv_obj_set_size(obj, 50, 35);
                                             lv_obj_set_style_bg_color(obj, lv_color_hex(0xff50cd23), LV_PART_MAIN | LV_STATE_DEFAULT);
                                             {
                                                 lv_obj_t *parent_obj = obj;
@@ -550,8 +568,8 @@ void create_screen_main() {
                                             // plustemp
                                             lv_obj_t *obj = lv_button_create(parent_obj);
                                             objects.plustemp = obj;
-                                            lv_obj_set_pos(obj, 206, 3);
-                                            lv_obj_set_size(obj, 40, 40);
+                                            lv_obj_set_pos(obj, 156, -5);
+                                            lv_obj_set_size(obj, 50, 35);
                                             lv_obj_set_style_bg_color(obj, lv_color_hex(0xff50cd23), LV_PART_MAIN | LV_STATE_DEFAULT);
                                             {
                                                 lv_obj_t *parent_obj = obj;
@@ -570,8 +588,8 @@ void create_screen_main() {
                                             // minustemp
                                             lv_obj_t *obj = lv_button_create(parent_obj);
                                             objects.minustemp = obj;
-                                            lv_obj_set_pos(obj, 253, 3);
-                                            lv_obj_set_size(obj, 40, 40);
+                                            lv_obj_set_pos(obj, 156, 36);
+                                            lv_obj_set_size(obj, 50, 35);
                                             lv_obj_set_style_bg_color(obj, lv_color_hex(0xfff25d3e), LV_PART_MAIN | LV_STATE_DEFAULT);
                                             {
                                                 lv_obj_t *parent_obj = obj;
@@ -590,8 +608,8 @@ void create_screen_main() {
                                             // minushumidity
                                             lv_obj_t *obj = lv_button_create(parent_obj);
                                             objects.minushumidity = obj;
-                                            lv_obj_set_pos(obj, 253, 53);
-                                            lv_obj_set_size(obj, 40, 40);
+                                            lv_obj_set_pos(obj, 156, 120);
+                                            lv_obj_set_size(obj, 50, 35);
                                             lv_obj_set_style_bg_color(obj, lv_color_hex(0xfff25d3e), LV_PART_MAIN | LV_STATE_DEFAULT);
                                             {
                                                 lv_obj_t *parent_obj = obj;
@@ -610,7 +628,7 @@ void create_screen_main() {
                                             // homebutton
                                             lv_obj_t *obj = lv_button_create(parent_obj);
                                             objects.homebutton = obj;
-                                            lv_obj_set_pos(obj, 159, 109);
+                                            lv_obj_set_pos(obj, 224, 83);
                                             lv_obj_set_size(obj, 66, 35);
                                             {
                                                 lv_obj_t *parent_obj = obj;

@@ -56,6 +56,8 @@ typedef struct _objects_t {
     lv_obj_t *allpotset;
     lv_obj_t *allupdate;
     lv_obj_t *alltextupdate;
+    lv_obj_t *tolerancehumidity;
+    lv_obj_t *tolerancetemp;
     lv_obj_t *sethumidity;
     lv_obj_t *settemp;
     lv_obj_t *humidity_spinbox;
