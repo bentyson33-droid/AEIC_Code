@@ -19,8 +19,10 @@ uint8_t pumpMAC[] = {0xE8, 0xF6, 0x0A, 0x16, 0xFC, 0x30};
 
 // ================= VARIABLES ==================
 uint8_t moisture_set =0;
+uint8_t DB =5;
 float t,h,m =0;
 uint8_t sendCount =0;
+boolean override =0;
 
 // ================= PINS =================
 #define DHTPIN D1
@@ -37,8 +39,9 @@ DHT dht(DHTPIN, DHTTYPE);
 // ================= PACKETS =================
 typedef struct __attribute__((packed)) {
     uint8_t set;
+    uint8_t DB;
+    boolean override;
 } moisture_packet_t;
-
 moisture_packet_t msp;
 
 typedef struct __attribute__((packed)) {
@@ -50,7 +53,6 @@ typedef struct __attribute__((packed)) {
     float soil_moisture;
 
 } status_packet_t;
-
 status_packet_t txData;
 
 typedef struct __attribute__((packed)) {
@@ -59,21 +61,33 @@ typedef struct __attribute__((packed)) {
     float temp;
     float humidity;
 } pump_packet_t;
-
 pump_packet_t pumpPacket;
+
+typedef struct __attribute__((packed)) {
+    uint8_t devAddr;
+    boolean override;
+    boolean valve_state;
+} manual_packet_t;
+manual_packet_t manualMode;
 
 // ================= RECEIVE COMMAND =================
 void onDataRecv(const uint8_t *, const uint8_t *data, int len) {
 
-    if (len != sizeof(moisture_packet_t)) return;
-    memcpy(&msp, data, len);
-    if (msp.set != moisture_set){
+    if (len == sizeof(moisture_packet_t)) {
+        memcpy(&msp, data, len);
         moisture_set=msp.set;
+        DB = msp.DB;
+        override = msp.override;
+        Serial.print(moisture_set);
+        Serial.print(" = ");
+        Serial.println(msp.set);
+    }
+    if (len == sizeof(manual_packet_t)){
+        memcpy(&manualMode, data, len);
+        override = manualMode.override;
+        digitalWrite(valvePin, manualMode.valve_state);
     }
     // Sanity Check for recieved values
-    Serial.print(moisture_set);
-    Serial.print(" = ");
-    Serial.println(msp.set);
     delay(1000);
 }
 // =================== SEND COMMAND ================
@@ -124,49 +138,55 @@ void setup() {
 
 // ================= LOOP =================
 void loop() {
-    // h = dht.readHumidity();
-    // t = dht.readTemperature(true);
-    // m=analogRead(moisturePin);
-
-    h = 60;
-    t = 60;
-    m = 60;
-
-    delay(100);
-
-    // Converitng reading to 0-100 scale
-    // For moisture Saturation (%)
-    // m=1-((m-1600)/2495);
-    delay(100);
-
-    // Check if moisture is within range
-    // And sending an update to pump on valve state change
-    // if (m< (moisture_set-5)){
-    //     digitalWrite(valvePin, HIGH);
-    //     sendValveData();
-    // }
-    // else if (m> (moisture_set+5)){
-    //     digitalWrite(valvePin, LOW);
-    //     sendValveData();
-    // }
-    
-    delay(300);
-
-    // Counting loop for sending every 10 Cycles or 5 seconds
-    if (sendCount == 9){
-        sendStatusData();
-        sendCount=0;
-        // Checking values from the sensor
-        Serial.println(moisture_set);
-        Serial.println(h);
-        Serial.println(t);
-        Serial.println(m);
-        Serial.println("");
+    if (override = 1){
+        delay(10);
+        return;
     }
     else {
-        sendCount += 1;
+        h = dht.readHumidity();
+        t = dht.readTemperature(true);
+        // m=analogRead(moisturePin);
+
+        // h = 60;
+        // t = 60;
+        m = 60;
+
+        delay(100);
+
+        // Converitng reading to 0-100 scale
+        // For moisture Saturation (%)
+        // m=1-((m-1600)/2495);
+        delay(100);
+
+        // Check if moisture is within range
+        // And sending an update to pump on valve state change
+        // if (m< (moisture_set-5)){
+        //     digitalWrite(valvePin, HIGH);
+        //     sendValveData();
+        // }
+        // else if (m> (moisture_set+5)){
+        //     digitalWrite(valvePin, LOW);
+        //     sendValveData();
+        // }
+        
+        delay(300);
+
+        // Counting loop for sending every 10 Cycles or 5 seconds
+        if (sendCount == 9){
+            sendStatusData();
+            sendCount=0;
+            // Checking values from the sensor
+            Serial.println(moisture_set);
+            Serial.println(h);
+            Serial.println(t);
+            Serial.println(m);
+            Serial.println("");
+        }
+        else {
+            sendCount += 1;
+        }
+        // Serial.println(sendCount);
     }
-    // Serial.println(sendCount);
 }
 
 
