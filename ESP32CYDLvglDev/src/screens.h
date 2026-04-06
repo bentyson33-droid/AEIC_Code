@@ -10,10 +10,13 @@ extern "C" {
 typedef struct _objects_t {
     lv_obj_t *splash;
     lv_obj_t *main;
+    lv_obj_t *manual;
     lv_obj_t *obj0;
     lv_obj_t *product;
-    lv_obj_t *enterbutton;
-    lv_obj_t *enterlabel;
+    lv_obj_t *manualbutton;
+    lv_obj_t *manuallabel;
+    lv_obj_t *automaticbutton;
+    lv_obj_t *automaticlabel;
     lv_obj_t *window;
     lv_obj_t *valveled1;
     lv_obj_t *valveled2;
@@ -105,6 +108,18 @@ typedef struct _objects_t {
     lv_obj_t *minusmoisturepot3;
     lv_obj_t *minustextpot3;
     lv_obj_t *moisture_pot3;
+    lv_obj_t *window_man;
+    lv_obj_t *humidifierswitch;
+    lv_obj_t *pumpswitch;
+    lv_obj_t *lightscale;
+    lv_obj_t *fanspeed;
+    lv_obj_t *fanscale;
+    lv_obj_t *lightslider;
+    lv_obj_t *valve3switch;
+    lv_obj_t *valve2switch;
+    lv_obj_t *homebuttonman;
+    lv_obj_t *hometext_1;
+    lv_obj_t *valve1switch;
 } objects_t;
 
 extern objects_t objects;
@@ -112,6 +127,7 @@ extern objects_t objects;
 enum ScreensEnum {
     SCREEN_ID_SPLASH = 1,
     SCREEN_ID_MAIN = 2,
+    SCREEN_ID_MANUAL = 3,
 };
 
 void create_screen_splash();
@@ -119,6 +135,9 @@ void tick_screen_splash();
 
 void create_screen_main();
 void tick_screen_main();
+
+void create_screen_manual();
+void tick_screen_manual();
 
 void tick_screen_by_id(enum ScreensEnum screenId);
 void tick_screen(int screen_index);

@@ -39,21 +39,40 @@ void create_screen_splash() {
             lv_label_set_text(obj, "Automatic Environment \n& Irrirgation Controller");
         }
         {
-            // enterbutton
+            // manualbutton
             lv_obj_t *obj = lv_button_create(parent_obj);
-            objects.enterbutton = obj;
-            lv_obj_set_pos(obj, 119, 181);
-            lv_obj_set_size(obj, 82, 34);
+            objects.manualbutton = obj;
+            lv_obj_set_pos(obj, 49, 157);
+            lv_obj_set_size(obj, 100, 34);
             {
                 lv_obj_t *parent_obj = obj;
                 {
-                    // enterlabel
+                    // manuallabel
                     lv_obj_t *obj = lv_label_create(parent_obj);
-                    objects.enterlabel = obj;
+                    objects.manuallabel = obj;
                     lv_obj_set_pos(obj, 0, 0);
                     lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                     lv_obj_set_style_align(obj, LV_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
-                    lv_label_set_text(obj, "Enter");
+                    lv_label_set_text(obj, "Manual");
+                }
+            }
+        }
+        {
+            // automaticbutton
+            lv_obj_t *obj = lv_button_create(parent_obj);
+            objects.automaticbutton = obj;
+            lv_obj_set_pos(obj, 173, 157);
+            lv_obj_set_size(obj, 100, 34);
+            {
+                lv_obj_t *parent_obj = obj;
+                {
+                    // automaticlabel
+                    lv_obj_t *obj = lv_label_create(parent_obj);
+                    objects.automaticlabel = obj;
+                    lv_obj_set_pos(obj, 0, 0);
+                    lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+                    lv_obj_set_style_align(obj, LV_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
+                    lv_label_set_text(obj, "Automatic");
                 }
             }
         }
@@ -978,12 +997,206 @@ void create_screen_main() {
 void tick_screen_main() {
 }
 
+void create_screen_manual() {
+    lv_obj_t *obj = lv_obj_create(0);
+    objects.manual = obj;
+    lv_obj_set_pos(obj, 0, 0);
+    lv_obj_set_size(obj, 320, 240);
+    {
+        lv_obj_t *parent_obj = obj;
+        {
+            // Window_man
+            lv_obj_t *obj = lv_tabview_create(parent_obj);
+            objects.window_man = obj;
+            lv_obj_set_pos(obj, 1, 1);
+            lv_obj_set_size(obj, 320, 240);
+            lv_tabview_set_tab_bar_position(obj, LV_DIR_TOP);
+            lv_tabview_set_tab_bar_size(obj, 32);
+            lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW);
+            lv_obj_set_scrollbar_mode(obj, LV_SCROLLBAR_MODE_OFF);
+            lv_obj_set_scroll_dir(obj, LV_DIR_NONE);
+            lv_obj_set_scroll_snap_x(obj, LV_SCROLL_SNAP_NONE);
+            lv_obj_set_scroll_snap_y(obj, LV_SCROLL_SNAP_NONE);
+            {
+                lv_obj_t *parent_obj = obj;
+                {
+                    lv_obj_t *obj = lv_tabview_add_tab(parent_obj, "Greenhouse");
+                    lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE);
+                    {
+                        lv_obj_t *parent_obj = obj;
+                        {
+                            // humidifierswitch
+                            lv_obj_t *obj = lv_switch_create(parent_obj);
+                            objects.humidifierswitch = obj;
+                            lv_obj_set_pos(obj, 91, 1);
+                            lv_obj_set_size(obj, 50, 25);
+                        }
+                        {
+                            // pumpswitch
+                            lv_obj_t *obj = lv_switch_create(parent_obj);
+                            objects.pumpswitch = obj;
+                            lv_obj_set_pos(obj, 236, 1);
+                            lv_obj_set_size(obj, 50, 25);
+                        }
+                        {
+                            lv_obj_t *obj = lv_label_create(parent_obj);
+                            lv_obj_set_pos(obj, 178, 5);
+                            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+                            lv_obj_set_style_text_align(obj, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
+                            lv_label_set_text(obj, "Pump");
+                        }
+                        {
+                            lv_obj_t *obj = lv_label_create(parent_obj);
+                            lv_obj_set_pos(obj, 2, 6);
+                            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+                            lv_obj_set_style_text_align(obj, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
+                            lv_label_set_text(obj, "Humidifier");
+                        }
+                        {
+                            lv_obj_t *obj = lv_label_create(parent_obj);
+                            lv_obj_set_pos(obj, 96, 33);
+                            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+                            lv_obj_set_style_text_align(obj, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
+                            lv_label_set_text(obj, "Light Level (%)");
+                        }
+                        {
+                            // lightscale
+                            lv_obj_t *obj = lv_scale_create(parent_obj);
+                            objects.lightscale = obj;
+                            lv_obj_set_pos(obj, 67, 77);
+                            lv_obj_set_size(obj, 153, 26);
+                            lv_scale_set_mode(obj, LV_SCALE_MODE_HORIZONTAL_BOTTOM);
+                            lv_scale_set_range(obj, 0, 100);
+                            lv_scale_set_total_tick_count(obj, 25);
+                            lv_scale_set_major_tick_every(obj, 6);
+                            lv_scale_set_label_show(obj, true);
+                            lv_obj_set_style_length(obj, 5, LV_PART_ITEMS | LV_STATE_DEFAULT);
+                            lv_obj_set_style_length(obj, 10, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+                        }
+                        {
+                            // fanspeed
+                            lv_obj_t *obj = lv_slider_create(parent_obj);
+                            objects.fanspeed = obj;
+                            lv_obj_set_pos(obj, 73, 138);
+                            lv_obj_set_size(obj, 150, 10);
+                            lv_slider_set_range(obj, 0, 255);
+                            lv_slider_set_value(obj, 25, LV_ANIM_OFF);
+                        }
+                        {
+                            // fanscale
+                            lv_obj_t *obj = lv_scale_create(parent_obj);
+                            objects.fanscale = obj;
+                            lv_obj_set_pos(obj, 74, 157);
+                            lv_obj_set_size(obj, 153, 26);
+                            lv_scale_set_mode(obj, LV_SCALE_MODE_HORIZONTAL_BOTTOM);
+                            lv_scale_set_range(obj, 0, 100);
+                            lv_scale_set_total_tick_count(obj, 25);
+                            lv_scale_set_major_tick_every(obj, 6);
+                            lv_scale_set_label_show(obj, true);
+                            lv_obj_set_style_length(obj, 5, LV_PART_ITEMS | LV_STATE_DEFAULT);
+                            lv_obj_set_style_length(obj, 10, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+                        }
+                        {
+                            lv_obj_t *obj = lv_label_create(parent_obj);
+                            lv_obj_set_pos(obj, 97, 114);
+                            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+                            lv_obj_set_style_text_align(obj, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
+                            lv_label_set_text(obj, "Fan Speed (%)");
+                        }
+                        {
+                            // lightslider
+                            lv_obj_t *obj = lv_slider_create(parent_obj);
+                            objects.lightslider = obj;
+                            lv_obj_set_pos(obj, 67, 57);
+                            lv_obj_set_size(obj, 150, 10);
+                            lv_slider_set_range(obj, 0, 255);
+                            lv_slider_set_value(obj, 25, LV_ANIM_OFF);
+                        }
+                    }
+                }
+                {
+                    lv_obj_t *obj = lv_tabview_add_tab(parent_obj, "Pots");
+                    lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE);
+                    lv_obj_set_scrollbar_mode(obj, LV_SCROLLBAR_MODE_OFF);
+                    {
+                        lv_obj_t *parent_obj = obj;
+                        {
+                            // valve3switch
+                            lv_obj_t *obj = lv_switch_create(parent_obj);
+                            objects.valve3switch = obj;
+                            lv_obj_set_pos(obj, 156, 103);
+                            lv_obj_set_size(obj, 50, 25);
+                        }
+                        {
+                            // valve2switch
+                            lv_obj_t *obj = lv_switch_create(parent_obj);
+                            objects.valve2switch = obj;
+                            lv_obj_set_pos(obj, 156, 54);
+                            lv_obj_set_size(obj, 50, 25);
+                        }
+                        {
+                            lv_obj_t *obj = lv_label_create(parent_obj);
+                            lv_obj_set_pos(obj, 91, 13);
+                            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+                            lv_label_set_text(obj, "Valve 1:");
+                        }
+                        {
+                            lv_obj_t *obj = lv_label_create(parent_obj);
+                            lv_obj_set_pos(obj, 90, 58);
+                            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+                            lv_label_set_text(obj, "Valve 2:");
+                        }
+                        {
+                            lv_obj_t *obj = lv_label_create(parent_obj);
+                            lv_obj_set_pos(obj, 89, 107);
+                            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+                            lv_label_set_text(obj, "Valve 3:");
+                        }
+                        {
+                            // homebuttonman
+                            lv_obj_t *obj = lv_button_create(parent_obj);
+                            objects.homebuttonman = obj;
+                            lv_obj_set_pos(obj, 115, 148);
+                            lv_obj_set_size(obj, 66, 35);
+                            {
+                                lv_obj_t *parent_obj = obj;
+                                {
+                                    // hometext_1
+                                    lv_obj_t *obj = lv_label_create(parent_obj);
+                                    objects.hometext_1 = obj;
+                                    lv_obj_set_pos(obj, 0, 0);
+                                    lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+                                    lv_obj_set_style_align(obj, LV_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
+                                    lv_label_set_text(obj, "Home");
+                                }
+                            }
+                        }
+                        {
+                            // valve1switch
+                            lv_obj_t *obj = lv_switch_create(parent_obj);
+                            objects.valve1switch = obj;
+                            lv_obj_set_pos(obj, 156, 8);
+                            lv_obj_set_size(obj, 50, 25);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    tick_screen_manual();
+}
+
+void tick_screen_manual() {
+}
+
 
 
 typedef void (*tick_screen_func_t)();
 tick_screen_func_t tick_screen_funcs[] = {
     tick_screen_splash,
     tick_screen_main,
+    tick_screen_manual,
 };
 void tick_screen(int screen_index) {
     tick_screen_funcs[screen_index]();
@@ -999,4 +1212,5 @@ void create_screens() {
     
     create_screen_splash();
     create_screen_main();
+    create_screen_manual();
 }

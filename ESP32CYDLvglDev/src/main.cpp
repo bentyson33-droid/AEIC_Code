@@ -17,9 +17,8 @@ uint8_t xiaoMAC[] = {0x58, 0x8C, 0x81, 0xA4, 0xCC, 0x14};
 // ================= PACKETS ========================
 typedef struct __attribute__((packed)) {
     uint8_t set;
-    // uint8_t devAddr;
-    // float moisture_target;
-    // float tolerance;
+    uint8_t DB;
+    boolean override;
 } moisture_packet_t;
 
 typedef struct __attribute__((packed)) {
@@ -30,6 +29,12 @@ typedef struct __attribute__((packed)) {
     float humidity;
     float soil_moisture;
 } status_packet_t;
+
+typedef struct __attribute__((packed)) {
+    uint8_t devAddr;
+    boolean override;
+    boolean valve_state;
+}   manual_packet_t;
 
 // =============== STRUCTURE ARRAY ================
 status_packet_t potsStruct[3];
@@ -55,8 +60,10 @@ TFT_eSPI tft = TFT_eSPI();
 // ================= PROTOTYPES ===================
 void touchscreen_read(lv_indev_t *, lv_indev_data_t *);
 void onDataRecv(const uint8_t *, const uint8_t *, int);
-void enterbutton_cb(lv_event_t * e);
+void automaticbutton_cb(lv_event_t * e);
+void manualbutton_cb(lv_event_t * e);
 void homebutton_cb(lv_event_t * e);
+void homebuttonman_cb(lv_event_t * e);
 void moisture_plus_cb(lv_event_t * e);
 void moisture_minus_cb(lv_event_t * e);
 void update_pot_cb(lv_event_t * e);
@@ -67,6 +74,9 @@ float calculateTolerance(float target, float tolerancePercent);
 // ================= SEND COMMAND =================
 // void sendMoistureTarget() {
 //     moisture_packet_t cmd;
+//      cmd.set = moisturespinbox
+//      cmd.DB = moistureDB
+//      cmd.override = 0
 //     cmd.moisture = moisture;
 
 //     esp_now_send(xiaoMAC, (uint8_t*)&cmd, sizeof(cmd));
@@ -126,8 +136,10 @@ void setup() {
     // Initialize EEZ UI
     ui_init();
 
-    lv_obj_add_event_cb(objects.enterbutton, enterbutton_cb, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_event_cb(objects.automaticbutton, automaticbutton_cb, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_event_cb(objects.manualbutton, manualbutton_cb, LV_EVENT_CLICKED, NULL);
     lv_obj_add_event_cb(objects.homebutton, homebutton_cb, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_event_cb(objects.homebuttonman, homebuttonman_cb, LV_EVENT_CLICKED, NULL);
 
     // POT 1
     lv_obj_add_event_cb(objects.plusmoisturepot1, moisture_plus_cb, LV_EVENT_PRESSED, objects.spinbox1);
@@ -222,13 +234,25 @@ void touchscreen_read(lv_indev_t *, lv_indev_data_t *data) {
 }
 
 // ====================== CALLBACKS ====================================
-void enterbutton_cb(lv_event_t * e) {
+void manualbutton_cb(lv_event_t * e) {
+    if (lv_event_get_code(e) == LV_EVENT_CLICKED) {
+        loadScreen(SCREEN_ID_MANUAL);
+    }
+}
+
+void automaticbutton_cb(lv_event_t * e) {
     if (lv_event_get_code(e) == LV_EVENT_CLICKED) {
         loadScreen(SCREEN_ID_MAIN);
     }
 }
 
 void homebutton_cb(lv_event_t * e) {
+    if (lv_event_get_code(e) == LV_EVENT_CLICKED) {
+        loadScreen(SCREEN_ID_SPLASH);
+    }
+}
+
+void homebuttonman_cb(lv_event_t * e) {
     if (lv_event_get_code(e) == LV_EVENT_CLICKED) {
         loadScreen(SCREEN_ID_SPLASH);
     }
