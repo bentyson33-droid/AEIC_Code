@@ -49,6 +49,19 @@ typedef struct __attribute__((packed)) {
     boolean override;
     boolean valve_state;
 }   manual_packet_t;
+manual_packet_t potOverride1;
+manual_packet_t potOverride2;
+manual_packet_t potOverride3;
+
+typedef struct __attribute__((packed)) {
+    uint8_t devAddr;
+    boolean override;
+    boolean humidState;
+    boolean pumpState;
+    uint8_t lightLevel;
+    uint8_t fanLevel;
+} manual_packet_t;
+manual_packet_t controlOverride;
 
 // =============== STRUCTURE ARRAY ================
 status_packet_t potsStruct[3];
@@ -407,8 +420,29 @@ void allupdate_cb(lv_event_t * e)
 void updateman_cb(lv_event_t * e)
 {
     if (lv_event_get_code(e) != LV_EVENT_CLICKED) return;
-
-
+    controlOverride.devAddr = 0;
+    controlOverride.override = 1;
+    controlOverride.humidState = lv_obj_has_state(humidifierswitch, LV_STATE_CHEKCED);
+    controlOverride.pumpState = lv_obj_has_state(pumpswitch, LV_STATE_CHECKED);
+    controlOverride.lightLevel = lv_slider_get_value(lightslider);
+    controlOverride.fanLevel = lv_slider_get_value(fanspeed);
+    esp_now_send(humidifierMAC, (uint8_t*)&controlOverride, sizeof(controlOverride));
+  
+    potOverride1.devAddr = 0;
+    potOverride1.override = 1;
+    potOverride1.valve_state = lv_obj_has_state(valve1switch, LV_STATE_CHECKED);
+    esp_now_send(xiaoMAC[0], (uint8_t*)&potOverride1, sizeof(potOverride1));
+    
+    potOverride1.devAddr = 0;
+    potOverride1.override = 1;
+    potOverride1.valve_state = lv_obj_has_state(valve2switch, LV_STATE_CHECKED);
+    esp_now_send(xiaoMAC[1], (uint8_t*)&potOverride2, sizeof(potOverride2));
+    
+    potOverride1.devAddr = 0;
+    potOverride1.override = 1;
+    potOverride1.valve_state = lv_obj_has_state(valve3switch, LV_STATE_CHECKED);
+    espnow_send(xiaoMAC[2], (uint8_t*)&potOverride3, sizeof(potOverride3));
+    
 }
 
 // ===================== UPDATED onDataRecv ==========================
