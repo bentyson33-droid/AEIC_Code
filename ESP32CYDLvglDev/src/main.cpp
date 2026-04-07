@@ -352,15 +352,15 @@ void update_pot_cb(lv_event_t * e)
 
     msp.override = 0;  // automatic mode
 
-    esp_now_send(xiaoMAC[potNumber], (uint8_t*)&msp, sizeof(msp));
+    esp_now_send(xiaoMAC[potNumber-1], (uint8_t*)&msp, sizeof(msp));
 
-    Serial.print("Sent Pot ");
-    Serial.print(potNumber);
-    Serial.println(xiaoMAC[potNumber]);
-    Serial.print(" Set=");
-    Serial.print(msp.set);
-    Serial.print(" DB=");
-    Serial.println(msp.DB);
+    // Serial.print("Sent Pot ");
+    // Serial.print(potNumber);
+    // Serial.println(xiaoMAC[potNumber]);
+    // Serial.print(" Set=");
+    // Serial.print(msp.set);
+    // Serial.print(" DB=");
+    // Serial.println(msp.DB);
 }
 
 // ===================== GREENHOUSE UPDATE =============================
@@ -371,14 +371,14 @@ void allupdate_cb(lv_event_t * e)
     // uint8_t humidity = lv_spinbox_get_value(objects.humidity_spinbox);
 
     HumidTempSet.humid_set = lv_spinbox_get_value(objects.humidity_spinbox);
-    HumidTempSet.temp_set = lv_spinbox_get_value(objects.temp_spinbox;
+    HumidTempSet.temp_set = lv_spinbox_get_value(objects.temp_spinbox);
     // Default tolerance = ±5%
     HumidTempSet.humid_DB = getToleranceValue(objects.tolerancehumidity);
     HumidTempSet.temp_DB = getToleranceValue(objects.tolerancetemp);
 
     HumidTempSet.override = 0;   // AUTOMATIC MODE
 
-    esp_now_send(humidififerMAC, (uint8_t*)&msp, sizeof(msp));
+    esp_now_send(humidifierMAC, (uint8_t*)&HumidTempSet, sizeof(HumidTempSet));
 
     Serial.print("Greenhouse AUTO update sent | Set=");
     // Serial.print(msp.set);
