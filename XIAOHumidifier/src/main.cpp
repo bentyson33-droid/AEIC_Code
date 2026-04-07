@@ -31,14 +31,13 @@ boolean pumpState =0;
 #define waterlevelTrig D9
 // ================= PACKETS =================
 typedef struct __attribute__((packed)) {
-    int temp_set;
-    int humid_set;
+    uint8_t temp_set;
+    uint8_t humid_set;
     int temp_DB;
     int humid_DB;
     boolean override;
 } set_packet_t;
 set_packet_t setPoints;
-set_packet_t temperary;
 
 typedef struct __attribute__((packed)) {
     uint8_t devAddr;
@@ -82,10 +81,11 @@ void onDataRecv(const uint8_t *, const uint8_t *data, int len) {
 
     if (len == sizeof(set_packet_t)){
 
-      memcpy(&temperary, data, len);
-
-      setPoints = temperary;
-      override = temperary.override;
+      memcpy(&setPoints, data, len);
+      override = setPoints.override;
+      Serial.print(setPoints.temp_DB);
+      Serial.print(" and ");
+      Serial.println(setPoints.temp_set);
     }
     if (len == sizeof(sensor_packet_t)){
       // Copy Data to memory
@@ -193,12 +193,12 @@ void loop() {
 
     // Counting loop for sending every 10 Cycles or  seconds
     if (sendCount == 9){
-        sendStatusData();
+        // sendStatusData();
         sendCount=0;
     }
     else {
         sendCount += 1;
     }
-    // Serial.println(sendCount);
+    Serial.println(sendCount);
   }
 }

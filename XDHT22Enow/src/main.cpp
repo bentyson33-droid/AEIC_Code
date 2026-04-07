@@ -12,14 +12,7 @@
 uint8_t cydMAC[] = {0x5C, 0x01, 0x3B, 0x50, 0x11, 0xD0}; //5C:01:3B:50:11:D0
 uint8_t pumpMAC[] = {0xE8, 0xF6, 0x0A, 0x16, 0xFC, 0x30};
 
-// ================= COMMAND DEFINES =================
-// #define CMD_VALVE1  1
-// #define CMD_VALVE2  2
-// #define CMD_VALVE3  3
-
 // ================= VARIABLES ==================
-uint8_t moisture_set =0;
-uint8_t DB =5;
 float t,h,m =0;
 uint8_t sendCount =0;
 boolean override =0;
@@ -29,10 +22,7 @@ boolean override =0;
 #define DHTTYPE DHT22
 
 const int valvePin = D3;
-// const int valve2Pin = D5;
-// const int valve3Pin = D6;
 const int moisturePin = A2;
-// const int lightPin = D10;
 
 DHT dht(DHTPIN, DHTTYPE);
 
@@ -75,12 +65,7 @@ void onDataRecv(const uint8_t *, const uint8_t *data, int len) {
 
     if (len == sizeof(moisture_packet_t)) {
         memcpy(&msp, data, len);
-        moisture_set=msp.set;
-        DB = msp.DB;
         override = msp.override;
-        Serial.print(moisture_set);
-        Serial.print(" = ");
-        Serial.println(msp.set);
     }
     if (len == sizeof(manual_packet_t)){
         memcpy(&manualMode, data, len);
@@ -138,7 +123,7 @@ void setup() {
 
 // ================= LOOP =================
 void loop() {
-    if (override = 1){
+    if (override == 1){
         delay(10);
         return;
     }
@@ -160,11 +145,11 @@ void loop() {
 
         // Check if moisture is within range
         // And sending an update to pump on valve state change
-        // if (m< (moisture_set-5)){
+        // if (m< (msp.set-msp.DB)){
         //     digitalWrite(valvePin, HIGH);
         //     sendValveData();
         // }
-        // else if (m> (moisture_set+5)){
+        // else if (m> (msp.set+msp.DB)){
         //     digitalWrite(valvePin, LOW);
         //     sendValveData();
         // }
@@ -176,7 +161,7 @@ void loop() {
             sendStatusData();
             sendCount=0;
             // Checking values from the sensor
-            Serial.println(moisture_set);
+            Serial.println(msp.set);
             Serial.println(h);
             Serial.println(t);
             Serial.println(m);
