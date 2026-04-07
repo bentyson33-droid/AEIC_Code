@@ -119,7 +119,11 @@ typedef struct _objects_t {
     lv_obj_t *valve2switch;
     lv_obj_t *homebuttonman;
     lv_obj_t *hometext_1;
+    lv_obj_t *updateman1;
+    lv_obj_t *hometext_2;
     lv_obj_t *valve1switch;
+    lv_obj_t *updateman0;
+    lv_obj_t *hometext_3;
 } objects_t;
 
 extern objects_t objects;

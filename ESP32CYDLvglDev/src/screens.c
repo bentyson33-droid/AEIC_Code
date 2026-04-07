@@ -1054,7 +1054,7 @@ void create_screen_manual() {
                         }
                         {
                             lv_obj_t *obj = lv_label_create(parent_obj);
-                            lv_obj_set_pos(obj, 96, 33);
+                            lv_obj_set_pos(obj, 63, 37);
                             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                             lv_obj_set_style_text_align(obj, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
                             lv_label_set_text(obj, "Light Level (%)");
@@ -1063,8 +1063,8 @@ void create_screen_manual() {
                             // lightscale
                             lv_obj_t *obj = lv_scale_create(parent_obj);
                             objects.lightscale = obj;
-                            lv_obj_set_pos(obj, 67, 77);
-                            lv_obj_set_size(obj, 153, 26);
+                            lv_obj_set_pos(obj, 11, 81);
+                            lv_obj_set_size(obj, 190, 26);
                             lv_scale_set_mode(obj, LV_SCALE_MODE_HORIZONTAL_BOTTOM);
                             lv_scale_set_range(obj, 0, 100);
                             lv_scale_set_total_tick_count(obj, 25);
@@ -1077,8 +1077,8 @@ void create_screen_manual() {
                             // fanspeed
                             lv_obj_t *obj = lv_slider_create(parent_obj);
                             objects.fanspeed = obj;
-                            lv_obj_set_pos(obj, 73, 138);
-                            lv_obj_set_size(obj, 150, 10);
+                            lv_obj_set_pos(obj, 11, 142);
+                            lv_obj_set_size(obj, 190, 10);
                             lv_slider_set_range(obj, 0, 255);
                             lv_slider_set_value(obj, 25, LV_ANIM_OFF);
                         }
@@ -1086,8 +1086,8 @@ void create_screen_manual() {
                             // fanscale
                             lv_obj_t *obj = lv_scale_create(parent_obj);
                             objects.fanscale = obj;
-                            lv_obj_set_pos(obj, 74, 157);
-                            lv_obj_set_size(obj, 153, 26);
+                            lv_obj_set_pos(obj, 11, 161);
+                            lv_obj_set_size(obj, 190, 26);
                             lv_scale_set_mode(obj, LV_SCALE_MODE_HORIZONTAL_BOTTOM);
                             lv_scale_set_range(obj, 0, 100);
                             lv_scale_set_total_tick_count(obj, 25);
@@ -1098,7 +1098,7 @@ void create_screen_manual() {
                         }
                         {
                             lv_obj_t *obj = lv_label_create(parent_obj);
-                            lv_obj_set_pos(obj, 97, 114);
+                            lv_obj_set_pos(obj, 64, 118);
                             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                             lv_obj_set_style_text_align(obj, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
                             lv_label_set_text(obj, "Fan Speed (%)");
@@ -1107,8 +1107,8 @@ void create_screen_manual() {
                             // lightslider
                             lv_obj_t *obj = lv_slider_create(parent_obj);
                             objects.lightslider = obj;
-                            lv_obj_set_pos(obj, 67, 57);
-                            lv_obj_set_size(obj, 150, 10);
+                            lv_obj_set_pos(obj, 11, 61);
+                            lv_obj_set_size(obj, 190, 10);
                             lv_slider_set_range(obj, 0, 255);
                             lv_slider_set_value(obj, 25, LV_ANIM_OFF);
                         }
@@ -1156,7 +1156,7 @@ void create_screen_manual() {
                             // homebuttonman
                             lv_obj_t *obj = lv_button_create(parent_obj);
                             objects.homebuttonman = obj;
-                            lv_obj_set_pos(obj, 115, 148);
+                            lv_obj_set_pos(obj, 181, 148);
                             lv_obj_set_size(obj, 66, 35);
                             {
                                 lv_obj_t *parent_obj = obj;
@@ -1172,6 +1172,25 @@ void create_screen_manual() {
                             }
                         }
                         {
+                            // updateman1
+                            lv_obj_t *obj = lv_button_create(parent_obj);
+                            objects.updateman1 = obj;
+                            lv_obj_set_pos(obj, 75, 148);
+                            lv_obj_set_size(obj, 66, 35);
+                            {
+                                lv_obj_t *parent_obj = obj;
+                                {
+                                    // hometext_2
+                                    lv_obj_t *obj = lv_label_create(parent_obj);
+                                    objects.hometext_2 = obj;
+                                    lv_obj_set_pos(obj, 0, 0);
+                                    lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+                                    lv_obj_set_style_align(obj, LV_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
+                                    lv_label_set_text(obj, "Update");
+                                }
+                            }
+                        }
+                        {
                             // valve1switch
                             lv_obj_t *obj = lv_switch_create(parent_obj);
                             objects.valve1switch = obj;
@@ -1179,6 +1198,25 @@ void create_screen_manual() {
                             lv_obj_set_size(obj, 50, 25);
                         }
                     }
+                }
+            }
+        }
+        {
+            // updateman0
+            lv_obj_t *obj = lv_button_create(parent_obj);
+            objects.updateman0 = obj;
+            lv_obj_set_pos(obj, 241, 143);
+            lv_obj_set_size(obj, 66, 35);
+            {
+                lv_obj_t *parent_obj = obj;
+                {
+                    // hometext_3
+                    lv_obj_t *obj = lv_label_create(parent_obj);
+                    objects.hometext_3 = obj;
+                    lv_obj_set_pos(obj, 0, 0);
+                    lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+                    lv_obj_set_style_align(obj, LV_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
+                    lv_label_set_text(obj, "Update");
                 }
             }
         }

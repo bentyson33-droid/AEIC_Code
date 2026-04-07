@@ -27,8 +27,8 @@ typedef struct __attribute__((packed)) {
 moisture_packet_t msp;
 
 typedef struct __attribute__((packed)) {
-    int temp_set;
-    int humid_set;
+    uint8_t temp_set;
+    uint8_t humid_set;
     int temp_DB;
     int humid_DB;
     boolean override;
@@ -82,6 +82,7 @@ void moisture_plus_cb(lv_event_t * e);
 void moisture_minus_cb(lv_event_t * e);
 void update_pot_cb(lv_event_t * e);
 void allupdate_cb(lv_event_t * e);
+void updateman_cb(lv_event_t * e);
 int getToleranceValue(lv_obj_t * dropdown);
 float calculateTolerance(float target, float tolerancePercent);
 
@@ -137,6 +138,11 @@ void setup() {
 
     esp_now_peer_info_t peerInfo = {};
     memcpy(peerInfo.peer_addr, xiaoMAC, 6);
+    peerInfo.channel = 0;
+    peerInfo.encrypt = false;
+    esp_now_add_peer(&peerInfo);
+
+    memcpy(peerInfo.peer_addr, humidifierMAC, 6);
     peerInfo.channel = 0;
     peerInfo.encrypt = false;
     esp_now_add_peer(&peerInfo);
@@ -214,6 +220,8 @@ void setup() {
     lv_obj_add_event_cb(objects.update1, update_pot_cb, LV_EVENT_CLICKED, (void*)1);
     lv_obj_add_event_cb(objects.update2, update_pot_cb, LV_EVENT_CLICKED, (void*)2);
     lv_obj_add_event_cb(objects.update3, update_pot_cb, LV_EVENT_CLICKED, (void*)3);
+    lv_obj_add_event_cb(objects.updateman0, updateman_cb, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_event_cb(objects.updateman1, updateman_cb, LV_EVENT_CLICKED, NULL);
 
     // GREENHOUSE UPDATE BUTTON
     lv_obj_add_event_cb(objects.allupdate, allupdate_cb, LV_EVENT_CLICKED, NULL);   
@@ -352,7 +360,14 @@ void update_pot_cb(lv_event_t * e)
 
     msp.override = 0;  // automatic mode
 
-    esp_now_send(xiaoMAC[potNumber-1], (uint8_t*)&msp, sizeof(msp));
+    esp_err_t result = esp_now_send(xiaoMAC[potNumber-1], (uint8_t*)&msp, sizeof(msp));
+
+    if (result == ESP_OK) {
+     Serial.println("Sending confirmed");
+   }
+   else {
+     Serial.println("Sending error");
+   }
 
     // Serial.print("Sent Pot ");
     // Serial.print(potNumber);
@@ -378,12 +393,22 @@ void allupdate_cb(lv_event_t * e)
 
     HumidTempSet.override = 0;   // AUTOMATIC MODE
 
-    esp_now_send(humidifierMAC, (uint8_t*)&HumidTempSet, sizeof(HumidTempSet));
+    esp_err_t result = esp_now_send(humidifierMAC, (uint8_t*)&HumidTempSet, sizeof(HumidTempSet));
 
-    Serial.print("Greenhouse AUTO update sent | Set=");
-    // Serial.print(msp.set);
-    // Serial.print(" DB=");
-    // Serial.println(msp.DB);
+    if (result == ESP_OK) {
+     Serial.println("Sending confirmed");
+   }
+   else {
+     Serial.println("Sending error");
+     Serial.println(result);
+   }
+}
+
+void updateman_cb(lv_event_t * e)
+{
+    if (lv_event_get_code(e) != LV_EVENT_CLICKED) return;
+
+
 }
 
 // ===================== UPDATED onDataRecv ==========================
