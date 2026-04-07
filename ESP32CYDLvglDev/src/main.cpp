@@ -12,7 +12,11 @@
 #define TARGET_XIAO_ADDR 1
 
 // ================= XIAO MAC =======================
-uint8_t xiaoMAC[] = {0x58, 0x8C, 0x81, 0xA4, 0xCC, 0x14};
+uint8_t xiaoMAC[3][6] = {{0x58, 0x8C, 0x81, 0xA4, 0xCC, 0x14},
+                        {0xE8, 0xF6, 0x0A, 0x16, 0xC0, 0xA4},
+                        {0xE8, 0xF6, 0x0A, 0x17, 0x0E, 0xC4}};
+
+uint8_t humidifierMAC[] = {0xE8, 0xF6, 0x0A, 0x16, 0xFC, 0x30};
 
 // ================= PACKETS ========================
 typedef struct __attribute__((packed)) {
@@ -304,20 +308,35 @@ void update_pot_cb(lv_event_t * e)
     if (potNumber == 1) {
         spin = objects.spinbox1;
         dropdown = objects.tolerancebox1;
-    } else if (potNumber == 2) {
+    } 
+    else if (potNumber == 2) {
         spin = objects.spinbox2;
         dropdown = objects.tolerancebox2;
-    } else if (potNumber == 3) {
+    } 
+    else if (potNumber == 3) {
         spin = objects.spinbox3;
         dropdown = objects.tolerancebox3;
     }
 
+    if (spin == NULL || dropdown == NULL) return;
+
     moisture_packet_t msp;
-    // msp.devAddr = potNumber;                        // which pot to update
-    // msp.moisture_target = lv_spinbox_get_value(spin);
-    // msp.tolerance = calculateTolerance(msp.moisture_target, getToleranceValue(dropdown));
+
+    msp.set = lv_spinbox_get_value(spin);
+
+    int tolPercent = getToleranceValue(dropdown);
+    msp.DB = (msp.set * tolPercent) / 100;
+
+    msp.override = 0;  // automatic mode
 
     esp_now_send(xiaoMAC, (uint8_t*)&msp, sizeof(msp));
+
+    Serial.print("Sent Pot ");
+    Serial.print(potNumber);
+    Serial.print(" Set=");
+    Serial.print(msp.set);
+    Serial.print(" DB=");
+    Serial.println(msp.DB);
 }
 
 // ===================== GREENHOUSE UPDATE =============================
@@ -325,12 +344,23 @@ void allupdate_cb(lv_event_t * e)
 {
     if (lv_event_get_code(e) != LV_EVENT_CLICKED) return;
 
-    status_packet_t packet;
-    // packet.type = 2;
-    // packet.temp = lv_spinbox_get_value(objects.temp_spinbox);
-    // packet.humidity = lv_spinbox_get_value(objects.humidity_spinbox);
+    moisture_packet_t msp;
 
-    esp_now_send(xiaoMAC, (uint8_t*)&packet, sizeof(packet));
+    uint8_t humidity = lv_spinbox_get_value(objects.humidity_spinbox);
+
+    msp.set = humidity;
+
+    // Default tolerance = ±5%
+    msp.DB = (humidity * 5) / 100;
+
+    msp.override = 0;   // AUTOMATIC MODE
+
+    esp_now_send(xiaoMAC, (uint8_t*)&msp, sizeof(msp));
+
+    Serial.print("Greenhouse AUTO update sent | Set=");
+    Serial.print(msp.set);
+    Serial.print(" DB=");
+    Serial.println(msp.DB);
 }
 
 // ===================== UPDATED onDataRecv ==========================
