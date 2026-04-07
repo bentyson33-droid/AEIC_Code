@@ -24,6 +24,7 @@ typedef struct __attribute__((packed)) {
     uint8_t DB;
     boolean override;
 } moisture_packet_t;
+moisture_packet_t msp;
 
 typedef struct __attribute__((packed)) {
     uint8_t devAddr;
@@ -77,13 +78,28 @@ float calculateTolerance(float target, float tolerancePercent);
 
 // ================= SEND COMMAND =================
 // void sendMoistureTarget() {
-//     moisture_packet_t cmd;
-//      cmd.set = moisturespinbox
-//      cmd.DB = moistureDB
-//      cmd.override = 0
-//     cmd.moisture = moisture;
 
-//     esp_now_send(xiaoMAC, (uint8_t*)&cmd, sizeof(cmd));
+//     packet for pot 1
+//      cmd1.set = moisturespinbox
+//      cmd1.DB = moistureDB
+//      cmd1.override = 0
+//     cmd1.moisture = moisture;
+
+//     packet for pot 2
+//      cmd2.set = moisturespinbox
+//      cmd2.DB = moistureDB
+//      cmd2.override = 0
+//     cmd2.moisture = moisture;
+
+//     packet for pot 3
+//      cmd3.set = moisturespinbox
+//      cmd3.DB = moistureDB
+//      cmd3.override = 0
+//     cmd3.moisture = moisture;
+
+//     esp_now_send(xiaoMAC[1], (uint8_t*)&cmd1, sizeof(cmd1));
+//     esp_now_send(xiaoMAC[2], (uint8_t*)&cmd2, sizeof(cmd2));
+//     esp_now_send(xiaoMAC[3], (uint8_t*)&cmd3, sizeof(cmd3));
 //     delay(2500);
 // }
 
@@ -93,7 +109,7 @@ float calculateTolerance(float target, float tolerancePercent);
 //     packet.temp_target = lv_spinbox_get_value(objects.temp_spinbox);
 //     packet.humidity_target = lv_spinbox_get_value(objects.humidity_spinbox);
 
-//     esp_now_send(xiaoMAC, (uint8_t*)&packet, sizeof(packet));
+//     esp_now_send(humidifierMAC, (uint8_t*)&packet, sizeof(packet));
 // }
 
 // ================= SETUP ========================
@@ -320,8 +336,6 @@ void update_pot_cb(lv_event_t * e)
 
     if (spin == NULL || dropdown == NULL) return;
 
-    moisture_packet_t msp;
-
     msp.set = lv_spinbox_get_value(spin);
 
     int tolPercent = getToleranceValue(dropdown);
@@ -329,10 +343,11 @@ void update_pot_cb(lv_event_t * e)
 
     msp.override = 0;  // automatic mode
 
-    esp_now_send(xiaoMAC, (uint8_t*)&msp, sizeof(msp));
+    esp_now_send(xiaoMAC[potNumber], (uint8_t*)&msp, sizeof(msp));
 
     Serial.print("Sent Pot ");
     Serial.print(potNumber);
+    Serial.println(xiaoMAC[potNumber]);
     Serial.print(" Set=");
     Serial.print(msp.set);
     Serial.print(" DB=");
