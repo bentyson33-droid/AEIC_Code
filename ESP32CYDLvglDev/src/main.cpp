@@ -27,6 +27,15 @@ typedef struct __attribute__((packed)) {
 moisture_packet_t msp;
 
 typedef struct __attribute__((packed)) {
+    int temp_set;
+    int humid_set;
+    int temp_DB;
+    int humid_DB;
+    boolean override;
+} humidifier_packet_t;
+humidifier_packet_t HumidTempSet;
+
+typedef struct __attribute__((packed)) {
     uint8_t devAddr;
     uint8_t devType;
     uint8_t valve_state;
@@ -338,8 +347,8 @@ void update_pot_cb(lv_event_t * e)
 
     msp.set = lv_spinbox_get_value(spin);
 
-    int tolPercent = getToleranceValue(dropdown);
-    msp.DB = (msp.set * tolPercent) / 100;
+    //int tolPercent = getToleranceValue(dropdown);
+    msp.DB = getToleranceValue(dropdown);
 
     msp.override = 0;  // automatic mode
 
@@ -359,23 +368,22 @@ void allupdate_cb(lv_event_t * e)
 {
     if (lv_event_get_code(e) != LV_EVENT_CLICKED) return;
 
-    moisture_packet_t msp;
+    // uint8_t humidity = lv_spinbox_get_value(objects.humidity_spinbox);
 
-    uint8_t humidity = lv_spinbox_get_value(objects.humidity_spinbox);
-
-    msp.set = humidity;
-
+    HumidTempSet.humid_set = lv_spinbox_get_value(objects.humidity_spinbox);
+    HumidTempSet.temp_set = lv_spinbox_get_value(objects.temp_spinbox;
     // Default tolerance = ±5%
-    msp.DB = (humidity * 5) / 100;
+    HumidTempSet.humid_DB = getToleranceValue(objects.tolerancehumidity);
+    HumidTempSet.temp_DB = getToleranceValue(objects.tolerancetemp);
 
-    msp.override = 0;   // AUTOMATIC MODE
+    HumidTempSet.override = 0;   // AUTOMATIC MODE
 
-    esp_now_send(xiaoMAC, (uint8_t*)&msp, sizeof(msp));
+    esp_now_send(humidififerMAC, (uint8_t*)&msp, sizeof(msp));
 
     Serial.print("Greenhouse AUTO update sent | Set=");
-    Serial.print(msp.set);
-    Serial.print(" DB=");
-    Serial.println(msp.DB);
+    // Serial.print(msp.set);
+    // Serial.print(" DB=");
+    // Serial.println(msp.DB);
 }
 
 // ===================== UPDATED onDataRecv ==========================
