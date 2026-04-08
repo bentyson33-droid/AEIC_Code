@@ -29,7 +29,7 @@ DHT dht(DHTPIN, DHTTYPE);
 // ================= PACKETS =================
 typedef struct __attribute__((packed)) {
     uint8_t set;
-    uint8_t DB;
+    int DB;
     boolean override;
 } moisture_packet_t;
 moisture_packet_t msp;
@@ -62,6 +62,8 @@ manual_packet_t manualMode;
 
 // ================= RECEIVE COMMAND =================
 void onDataRecv(const uint8_t *, const uint8_t *data, int len) {
+    Serial.println("message recieved");
+    Serial.println(" ");
 
     if (len == sizeof(moisture_packet_t)) {
         memcpy(&msp, data, len);
@@ -119,46 +121,49 @@ void setup() {
     peerInfo.channel = 0;
     peerInfo.encrypt = false;
     esp_now_add_peer(&peerInfo);
+
+    memcpy(peerInfo.peer_addr, pumpMAC, 6);
+    peerInfo.channel = 0;
+    peerInfo.encrypt = false;
+    esp_now_add_peer(&peerInfo);    
 }
 
 // ================= LOOP =================
 void loop() {
     if (override == 1){
-        delay(10);
+        delay(100);
         return;
     }
     else {
         h = dht.readHumidity();
         t = dht.readTemperature(true);
-        // m=analogRead(moisturePin);
+        m=analogRead(moisturePin);
 
         // h = 60;
         // t = 60;
-        m = 60;
+        // m = 60;
 
         delay(100);
 
         // Converitng reading to 0-100 scale
         // For moisture Saturation (%)
-        // m=1-((m-1600)/2495);
+        m=1-((m-1600)/2495);
         delay(100);
 
         // Check if moisture is within range
         // And sending an update to pump on valve state change
-        // if (m< (msp.set-msp.DB)){
-        //     digitalWrite(valvePin, HIGH);
-        //     sendValveData();
-        // }
-        // else if (m> (msp.set+msp.DB)){
-        //     digitalWrite(valvePin, LOW);
-        //     sendValveData();
-        // }
-        
+        if (m < (msp.set-msp.DB)){
+            digitalWrite(valvePin, HIGH);
+        }
+        else if (m > (msp.set+msp.DB)){
+            digitalWrite(valvePin, LOW);
+        }
         delay(300);
 
         // Counting loop for sending every 10 Cycles or 5 seconds
         if (sendCount == 9){
             sendStatusData();
+            sendValveData();
             sendCount=0;
             // Checking values from the sensor
             Serial.println(msp.set);

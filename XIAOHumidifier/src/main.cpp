@@ -15,13 +15,15 @@ uint8_t cydMAC[] = {0x5C, 0x01, 0x3B, 0x50, 0x11, 0xD0}; //5C:01:3B:50:11:D0
 // ================= VARIABLES ==================
 float avg_temp = 65;
 float avg_humid = 50;
-uint8_t water_level = 50;
+float water_level = 50;
 int sendCount = 0;
 boolean override =0;
 int lightLevel =0;
 int fanLevel =0;
 boolean humidState =0;
 boolean pumpState =0;
+long duration;
+float distance;
 // ================= PINS =================
 #define fanPin A0
 #define lightPin A1
@@ -78,6 +80,8 @@ sensor_packet_t potData[3] = {pot1, pot2, pot3};
 
 // ================= RECEIVE COMMAND =================
 void onDataRecv(const uint8_t *, const uint8_t *data, int len) {
+  Serial.println("message recieved");
+  Serial.println(" ");
 
     if (len == sizeof(set_packet_t)){
 
@@ -113,7 +117,7 @@ void sendStatusData() {
     txData.pump_state = analogRead(pumpPin);
     txData.humidifier_state = digitalRead(humidifierPin);
     txData.light_level = analogRead(lightPin);
-    txData.water_level = 50;
+    txData.water_level = water_level;
 
     esp_now_send(cydMAC, (uint8_t*)&txData, sizeof(txData));
 }
@@ -150,11 +154,33 @@ void setup() {
 // ================= LOOP =================
 void loop() {
   if (override == 1){
-    delay(50);
+    delay(100);
     return;
   }
   else {
     delay(100);
+    analogWrite(lightPin, 255);
+
+    // Clear the trigPin by setting it LOW
+    digitalWrite(waterlevelTrig, LOW);
+    delayMicroseconds(2);
+  
+    // Trigger the sensor by sending a 10 microsecond pulse
+    digitalWrite(waterlevelTrig, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(waterlevelTrig, LOW);
+  
+    // Read the echoPin; pulseIn returns the duration in microseconds
+    duration = pulseIn(waterlevelEcho, HIGH);
+  
+    // Calculate distance: (time * speed of sound) / 2
+    // Speed of sound is ~0.0343 cm/µs
+    distance = (duration * 0.0343) / 2;
+  
+    Serial.println(distance);
+    // empty = 16 cm
+    // full = 8 cm
+    water_level = (1 - (distance - 8)/8)*100;
     
     // Finding average temp & humidity
     avg_temp = 0;
@@ -166,21 +192,25 @@ void loop() {
     avg_temp=avg_temp/3;
     avg_humid=avg_humid/3;
     delay(100);
+
+
   // Checking Temp to turn on/off fan
-    if (avg_temp > setPoints.temp_set + setPoints.temp_DB){
+    if (avg_temp > setPoints.temp_set + setPoints.temp_DB & water_level > 10){
       pinMode(fanPin, HIGH);
     }
     else if (avg_temp < setPoints.temp_set - setPoints.temp_DB){
       pinMode(fanPin, LOW);
     }
   // Chekcing Humidity to turn on/off humidifer
-    if (avg_humid < setPoints.humid_set + setPoints.humid_DB){
+    if (avg_humid < setPoints.humid_set - setPoints.humid_DB & water_level > 10){
       pinMode(humidifierPin, HIGH);
     }
     if (avg_humid > setPoints.humid_set + setPoints.humid_DB){
       pinMode(humidifierPin, LOW);
     }
     delay(300);
+
+
   // Turning the pump on if any valve is open
     if (potData[0].valve_state==1 ||
         potData[1].valve_state==1 ||
@@ -190,6 +220,7 @@ void loop() {
     else {
       analogWrite(pumpPin, 0);
     }
+
 
     // Counting loop for sending every 10 Cycles or  seconds
     if (sendCount == 9){
