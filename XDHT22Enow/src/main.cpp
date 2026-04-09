@@ -72,9 +72,7 @@ void onDataRecv(const uint8_t *, const uint8_t *data, int len) {
     if (len == sizeof(manual_packet_t)){
         memcpy(&manualMode, data, len);
         override = manualMode.override;
-        if (manualMode.valve_state == 1){
-        digitalWrite(valvePin, HIGH);}
-        else {digitalWrite(valvePin, LOW);}
+        digitalWrite(valvePin, manualMode.valve_state);
     }
     // Sanity Check for recieved values
     delay(1000);
