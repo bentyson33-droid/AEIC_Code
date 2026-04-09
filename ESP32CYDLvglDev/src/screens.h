@@ -111,6 +111,8 @@ typedef struct _objects_t {
     lv_obj_t *window_man;
     lv_obj_t *humidifierswitch;
     lv_obj_t *pumpswitch;
+    lv_obj_t *updateman0;
+    lv_obj_t *hometext_3;
     lv_obj_t *lightscale;
     lv_obj_t *fanspeed;
     lv_obj_t *fanscale;
@@ -122,8 +124,6 @@ typedef struct _objects_t {
     lv_obj_t *updateman1;
     lv_obj_t *hometext_2;
     lv_obj_t *valve1switch;
-    lv_obj_t *updateman0;
-    lv_obj_t *hometext_3;
 } objects_t;
 
 extern objects_t objects;

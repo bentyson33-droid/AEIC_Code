@@ -1021,7 +1021,7 @@ void create_screen_manual() {
                 lv_obj_t *parent_obj = obj;
                 {
                     lv_obj_t *obj = lv_tabview_add_tab(parent_obj, "Greenhouse");
-                    lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE);
+                    lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW);
                     {
                         lv_obj_t *parent_obj = obj;
                         {
@@ -1044,6 +1044,25 @@ void create_screen_manual() {
                             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                             lv_obj_set_style_text_align(obj, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
                             lv_label_set_text(obj, "Pump");
+                        }
+                        {
+                            // updateman0
+                            lv_obj_t *obj = lv_button_create(parent_obj);
+                            objects.updateman0 = obj;
+                            lv_obj_set_pos(obj, 228, 98);
+                            lv_obj_set_size(obj, 66, 35);
+                            {
+                                lv_obj_t *parent_obj = obj;
+                                {
+                                    // hometext_3
+                                    lv_obj_t *obj = lv_label_create(parent_obj);
+                                    objects.hometext_3 = obj;
+                                    lv_obj_set_pos(obj, 0, 0);
+                                    lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+                                    lv_obj_set_style_align(obj, LV_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
+                                    lv_label_set_text(obj, "Update");
+                                }
+                            }
                         }
                         {
                             lv_obj_t *obj = lv_label_create(parent_obj);
@@ -1116,7 +1135,7 @@ void create_screen_manual() {
                 }
                 {
                     lv_obj_t *obj = lv_tabview_add_tab(parent_obj, "Pots");
-                    lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE);
+                    lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW);
                     lv_obj_set_scrollbar_mode(obj, LV_SCROLLBAR_MODE_OFF);
                     {
                         lv_obj_t *parent_obj = obj;
@@ -1198,25 +1217,6 @@ void create_screen_manual() {
                             lv_obj_set_size(obj, 50, 25);
                         }
                     }
-                }
-            }
-        }
-        {
-            // updateman0
-            lv_obj_t *obj = lv_button_create(parent_obj);
-            objects.updateman0 = obj;
-            lv_obj_set_pos(obj, 241, 143);
-            lv_obj_set_size(obj, 66, 35);
-            {
-                lv_obj_t *parent_obj = obj;
-                {
-                    // hometext_3
-                    lv_obj_t *obj = lv_label_create(parent_obj);
-                    objects.hometext_3 = obj;
-                    lv_obj_set_pos(obj, 0, 0);
-                    lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-                    lv_obj_set_style_align(obj, LV_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
-                    lv_label_set_text(obj, "Update");
                 }
             }
         }

@@ -46,6 +46,17 @@ typedef struct __attribute__((packed)) {
 
 typedef struct __attribute__((packed)) {
     uint8_t devAddr;
+    uint8_t devType;
+    int fan_state;
+    int pump_state;
+    boolean humidifier_state;
+    int light_level;
+    float water_level;
+} pump_packet_t;
+pump_packet_t pumpData;
+
+typedef struct __attribute__((packed)) {
+    uint8_t devAddr;
     boolean override;
     boolean valve_state;
 }   manual_packet_t;
@@ -60,8 +71,8 @@ typedef struct __attribute__((packed)) {
     boolean pumpState;
     uint8_t lightLevel;
     uint8_t fanLevel;
-} manual_packet_t;
-manual_packet_t controlOverride;
+} manualcontrol_packet_t;
+manualcontrol_packet_t controlOverride;
 
 // =============== STRUCTURE ARRAY ================
 status_packet_t potsStruct[3];
@@ -422,73 +433,110 @@ void updateman_cb(lv_event_t * e)
     if (lv_event_get_code(e) != LV_EVENT_CLICKED) return;
     controlOverride.devAddr = 0;
     controlOverride.override = 1;
-    controlOverride.humidState = lv_obj_has_state(humidifierswitch, LV_STATE_CHEKCED);
-    controlOverride.pumpState = lv_obj_has_state(pumpswitch, LV_STATE_CHECKED);
-    controlOverride.lightLevel = lv_slider_get_value(lightslider);
-    controlOverride.fanLevel = lv_slider_get_value(fanspeed);
+    controlOverride.humidState = lv_obj_has_state(objects.humidifierswitch, LV_STATE_CHECKED);
+    controlOverride.pumpState = lv_obj_has_state(objects.pumpswitch, LV_STATE_CHECKED);
+    controlOverride.lightLevel = lv_slider_get_value(objects.lightslider);
+    controlOverride.fanLevel = lv_slider_get_value(objects.fanspeed);
     esp_now_send(humidifierMAC, (uint8_t*)&controlOverride, sizeof(controlOverride));
   
     potOverride1.devAddr = 0;
     potOverride1.override = 1;
-    potOverride1.valve_state = lv_obj_has_state(valve1switch, LV_STATE_CHECKED);
+    potOverride1.valve_state = lv_obj_has_state(objects.valve1switch, LV_STATE_CHECKED);
     esp_now_send(xiaoMAC[0], (uint8_t*)&potOverride1, sizeof(potOverride1));
     
     potOverride1.devAddr = 0;
     potOverride1.override = 1;
-    potOverride1.valve_state = lv_obj_has_state(valve2switch, LV_STATE_CHECKED);
+    potOverride1.valve_state = lv_obj_has_state(objects.valve2switch, LV_STATE_CHECKED);
     esp_now_send(xiaoMAC[1], (uint8_t*)&potOverride2, sizeof(potOverride2));
     
     potOverride1.devAddr = 0;
     potOverride1.override = 1;
-    potOverride1.valve_state = lv_obj_has_state(valve3switch, LV_STATE_CHECKED);
-    espnow_send(xiaoMAC[2], (uint8_t*)&potOverride3, sizeof(potOverride3));
+    potOverride1.valve_state = lv_obj_has_state(objects.valve3switch, LV_STATE_CHECKED);
+    esp_now_send(xiaoMAC[2], (uint8_t*)&potOverride3, sizeof(potOverride3));
     
 }
 
 // ===================== UPDATED onDataRecv ==========================
 void onDataRecv(const uint8_t *, const uint8_t *incomingData, int len) {
-    if (len != sizeof(status_packet_t)) return;
 
-    // Copy incoming data into local struct (non-volatile)
-    status_packet_t tmp;
-    memcpy(&tmp, incomingData, sizeof(tmp));
+    // ===== POT STATUS PACKET =====
+    if (len == sizeof(status_packet_t)) {
 
-    int idx = tmp.devAddr - 1;
-    if (idx >= 0 && idx < 3) {
+        status_packet_t tmp;
+        memcpy(&tmp, incomingData, sizeof(tmp));
 
-        // Store into potsStruct
-        potsStruct[idx] = tmp;
+        int idx = tmp.devAddr - 1;
+        if (idx >= 0 && idx < 3) {
 
-        // Compute derived values
-        float tempC = (tmp.temperature - 32.0f) * 5.0f / 9.0f;
-        float svp = 0.6108f * expf((17.27f * tempC) / (tempC + 237.3f));
-        float vpd = svp * (1.0f - tmp.humidity / 100.0f);
+            potsStruct[idx] = tmp;
 
-        // Update UI
-        switch(idx) {
-            case 0:
-                lv_label_set_text_fmt(objects.pot1_temp, "%.1f °F / %.1f °C", tmp.temperature, tempC);
-                lv_label_set_text_fmt(objects.pot1_humidity, "%.1f %%", tmp.humidity);
-                lv_label_set_text_fmt(objects.pot1_moisture, "%.1f %%", tmp.soil_moisture);
-                lv_label_set_text_fmt(objects.pot1_vpd, "%.2f kPa", vpd);
-                break;
+            float tempC = (tmp.temperature - 32.0f) * 5.0f / 9.0f;
+            float svp = 0.6108f * expf((17.27f * tempC) / (tempC + 237.3f));
+            float vpd = svp * (1.0f - tmp.humidity / 100.0f);
 
-            case 1:
-                lv_label_set_text_fmt(objects.pot2_temp, "%.1f °F / %.1f °C", tmp.temperature, tempC);
-                lv_label_set_text_fmt(objects.pot2_humidity, "%.1f %%", tmp.humidity);
-                lv_label_set_text_fmt(objects.pot2_moisture, "%.1f %%", tmp.soil_moisture);
-                lv_label_set_text_fmt(objects.pot2_vpd, "%.2f kPa", vpd);
-                break;
+            bool valveOn = tmp.valve_state;
 
-            case 2:
-                lv_label_set_text_fmt(objects.pot3_temp, "%.1f °F / %.1f °C", tmp.temperature, tempC);
-                lv_label_set_text_fmt(objects.pot3_humidity, "%.1f %%", tmp.humidity);
-                lv_label_set_text_fmt(objects.pot3_moisture, "%.1f %%", tmp.soil_moisture);
-                lv_label_set_text_fmt(objects.pot3_vpd, "%.2f kPa", vpd);
-                break;
+            switch(idx) {
+                case 0:
+                    lv_label_set_text_fmt(objects.pot1_temp, "%.1f °F / %.1f °C", tmp.temperature, tempC);
+                    lv_label_set_text_fmt(objects.pot1_humidity, "%.1f %%", tmp.humidity);
+                    lv_label_set_text_fmt(objects.pot1_moisture, "%.1f %%", tmp.soil_moisture);
+                    lv_label_set_text_fmt(objects.pot1_vpd, "%.2f kPa", vpd);
+
+                    // LED + label
+                    lv_obj_set_style_bg_color(objects.valveled1,
+                        valveOn ? lv_color_hex(0x00FF00) : lv_color_hex(0x808080),
+                        LV_PART_MAIN);
+                    lv_label_set_text(objects.valve1_state,
+                        valveOn ? "ON" : "OFF");
+                    break;
+
+                case 1:
+                    lv_label_set_text_fmt(objects.pot2_temp, "%.1f °F / %.1f °C", tmp.temperature, tempC);
+                    lv_label_set_text_fmt(objects.pot2_humidity, "%.1f %%", tmp.humidity);
+                    lv_label_set_text_fmt(objects.pot2_moisture, "%.1f %%", tmp.soil_moisture);
+                    lv_label_set_text_fmt(objects.pot2_vpd, "%.2f kPa", vpd);
+
+                    lv_obj_set_style_bg_color(objects.valveled2,
+                        valveOn ? lv_color_hex(0x00FF00) : lv_color_hex(0x808080),
+                        LV_PART_MAIN);
+                    lv_label_set_text(objects.valve2_state,
+                        valveOn ? "ON" : "OFF");
+                    break;
+
+                case 2:
+                    lv_label_set_text_fmt(objects.pot3_temp, "%.1f °F / %.1f °C", tmp.temperature, tempC);
+                    lv_label_set_text_fmt(objects.pot3_humidity, "%.1f %%", tmp.humidity);
+                    lv_label_set_text_fmt(objects.pot3_moisture, "%.1f %%", tmp.soil_moisture);
+                    lv_label_set_text_fmt(objects.pot3_vpd, "%.2f kPa", vpd);
+
+                    lv_obj_set_style_bg_color(objects.valveled3,
+                        valveOn ? lv_color_hex(0x00FF00) : lv_color_hex(0x808080),
+                        LV_PART_MAIN);
+                    lv_label_set_text(objects.valve3_state,
+                        valveOn ? "ON" : "OFF");
+                    break;
+            }
         }
+
+        Serial.println("=== NEW STATUS RECEIVED ===");
+        Serial.print("DevAddr: "); Serial.println(tmp.devAddr);
     }
 
-    Serial.println("=== NEW STATUS RECEIVED ===");
-    Serial.print("DevAddr: "); Serial.println(tmp.devAddr);
+    // ===== PUMP / WATER LEVEL PACKET =====
+    else if (len == sizeof(pump_packet_t)) {
+
+        memcpy(&pumpData, incomingData, sizeof(pumpData));
+
+        float level = pumpData.water_level;
+
+        // clamp 0–100
+        if (level < 0) level = 0;
+        if (level > 100) level = 100;
+
+        lv_bar_set_value(objects.water_level, (int)pumpData.water_level, LV_ANIM_ON);
+
+        Serial.print("Water Level: ");
+        Serial.println(level);
+    }
 }
