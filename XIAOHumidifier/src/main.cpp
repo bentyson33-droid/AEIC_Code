@@ -8,7 +8,7 @@
 
 // ================= MAC ADDRESSES =================
 // REPLACE with your CYD MAC
-uint8_t cydMAC[] = {0x5C, 0x01, 0x3B, 0x50, 0x11, 0xD0}; //5C:01:3B:50:11:D0
+uint8_t cydMAC[] = {0x14, 0x33, 0x5C, 0x6B, 0xA8, 0x68}; //5C:01:3B:50:11:D0
 
 // ================= COMMAND DEFINES =================
 
@@ -24,6 +24,9 @@ boolean humidState =0;
 boolean pumpState =0;
 long duration;
 float distance;
+uint8_t lightCount =0;
+uint8_t lightTime =8;
+uint8_t lightOFF =0;
 // ================= PINS =================
 #define fanPin A0
 #define lightPin A1
@@ -38,6 +41,7 @@ typedef struct __attribute__((packed)) {
     int temp_DB;
     int humid_DB;
     boolean override;
+    // uint8_t lightTime;
 } set_packet_t;
 set_packet_t setPoints;
 
@@ -84,15 +88,20 @@ void onDataRecv(const uint8_t *, const uint8_t *data, int len) {
   Serial.println(" ");
 
     if (len == sizeof(set_packet_t)){
-
+      // Copy incoming data to memory packet of set points
       memcpy(&setPoints, data, len);
+      // Overwriting variables to reset the loop
+      // As if the device just powered on
+      // lightTime = setPoints.lightTime;
+      lightLevel = 255;
+      // lightCount = 0;
       override = setPoints.override;
       Serial.print(setPoints.temp_DB);
       Serial.print(" and ");
       Serial.println(setPoints.temp_set);
     }
     if (len == sizeof(sensor_packet_t)){
-      // Copy Data to memory
+      // Copy Data to memory packet
       memcpy(&SensorData, data, len);
       // Set the values in the sturctures to the new values
       potData[SensorData.devAddr-1].humidity = SensorData.humidity;
@@ -104,7 +113,7 @@ void onDataRecv(const uint8_t *, const uint8_t *data, int len) {
       override = manualMode.override;
       digitalWrite(humidifierPin, manualMode.humidState);
       digitalWrite(pumpPin, manualMode.pumpState);
-      analogWrite(fanPin, fanLevel);
+      analogWrite(fanPin, manualMode.fanLevel);
       analogWrite(lightPin, manualMode.lightLevel);
     }
     delay(100);
@@ -158,8 +167,8 @@ void loop() {
     return;
   }
   else {
-    delay(100);
-    analogWrite(lightPin, 255);
+    // Delays are set so loop runs every 500 milliseconds
+    delay(99.988); 
 
     // Clear the trigPin by setting it LOW
     digitalWrite(waterlevelTrig, LOW);
@@ -222,7 +231,7 @@ void loop() {
     }
 
 
-    // Counting loop for sending every 10 Cycles or  seconds
+    // Counting loop for sending every 10 Cycles or 5 seconds
     if (sendCount == 9){
         // sendStatusData();
         sendCount=0;
@@ -231,5 +240,27 @@ void loop() {
         sendCount += 1;
     }
     Serial.println(sendCount);
+
+    // // Light Check
+    // // Converts cycles to seconds to minutes to hours
+    // // Checks whether light is on or off
+    // // If "ON" checks how long it has been on
+    // // If "OFF" how long it has been off
+    // if (lightLevel == 255){
+    //   if (lightCount*2*60 == (lightTime)*2*60*60){
+    //     lightLevel = 0;
+    //     lightOFF = 0;
+    //   }
+    //   else {lightCount = lightCount + 1;}
+    // }
+    // else if (lightLevel == 0){
+    //   if (lightOFF == (24-lightTime)*2*60*60){
+    //     lightLevel = 255;
+    //     lightCount = 0;
+    //   }
+    //   else {lightOFF = lightOFF + 1;}
+    // }
+    analogWrite(lightPin, lightLevel);
   }
+
 }

@@ -9,7 +9,7 @@
 
 // ================= MAC ADDRESSES =================
 // REPLACE with your CYD MAC
-uint8_t cydMAC[] = {0x5C, 0x01, 0x3B, 0x50, 0x11, 0xD0}; //5C:01:3B:50:11:D0
+uint8_t cydMAC[] = {0x14, 0x33, 0x5C, 0x6B, 0xA8, 0x68}; //5C:01:3B:50:11:D0
 uint8_t pumpMAC[] = {0xE8, 0xF6, 0x0A, 0x16, 0xFC, 0x30};
 
 // ================= VARIABLES ==================
@@ -72,7 +72,9 @@ void onDataRecv(const uint8_t *, const uint8_t *data, int len) {
     if (len == sizeof(manual_packet_t)){
         memcpy(&manualMode, data, len);
         override = manualMode.override;
-        digitalWrite(valvePin, manualMode.valve_state);
+        if (manualMode.valve_state == 1){
+        digitalWrite(valvePin, HIGH);}
+        else {digitalWrite(valvePin, LOW);}
     }
     // Sanity Check for recieved values
     delay(1000);
