@@ -30,7 +30,7 @@ uint8_t lightOFF =0;
 // ================= PINS =================
 #define fanPin A0
 #define lightPin A1
-#define pumpPin D2
+#define pumpPin D4
 #define humidifierPin D3
 #define waterlevelEcho D6
 #define waterlevelTrig D9
@@ -115,6 +115,7 @@ void onDataRecv(const uint8_t *, const uint8_t *data, int len) {
       digitalWrite(pumpPin, manualMode.pumpState);
       analogWrite(fanPin, manualMode.fanLevel);
       analogWrite(lightPin, manualMode.lightLevel);
+      Serial.println("Override Set");
     }
     delay(100);
 }

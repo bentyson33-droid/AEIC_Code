@@ -4,7 +4,7 @@
 #include "DHT.h"
 
 // ================= DEVICE DEFINES =================
-#define DEVICE_ADDR 2
+#define DEVICE_ADDR 1
 #define DEVICE_TYPE_XIAO 0x01
 
 // ================= MAC ADDRESSES =================
@@ -73,6 +73,7 @@ void onDataRecv(const uint8_t *, const uint8_t *data, int len) {
         memcpy(&manualMode, data, len);
         override = manualMode.override;
         digitalWrite(valvePin, manualMode.valve_state);
+        Serial.println("Override Recieved");
     }
     // Sanity Check for recieved values
     delay(1000);
@@ -97,6 +98,17 @@ void sendValveData() {
 
     esp_now_send(pumpMAC, (uint8_t*)&pumpPacket,sizeof(pumpPacket));
 }
+
+void addPeer (uint8_t *peerAddr) {
+    esp_now_peer_info_t peerInfo = {};
+    memcpy(peerInfo.peer_addr, peerAddr, 6);
+    peerInfo.channel = 0;
+    peerInfo.encrypt = false;
+
+    if (esp_now_add_peer(&peerInfo) != ESP_OK) {
+    Serial.println("Failed to add peer");
+    }
+}
 // ================= SETUP =================
 void setup() {
     Serial.begin(9600);
@@ -115,17 +127,9 @@ void setup() {
     }
 
     esp_now_register_recv_cb(onDataRecv);
-
-    esp_now_peer_info_t peerInfo = {};
-    memcpy(peerInfo.peer_addr, cydMAC, 6);
-    peerInfo.channel = 0;
-    peerInfo.encrypt = false;
-    esp_now_add_peer(&peerInfo);
-
-    memcpy(peerInfo.peer_addr, pumpMAC, 6);
-    peerInfo.channel = 0;
-    peerInfo.encrypt = false;
-    esp_now_add_peer(&peerInfo);    
+    
+    addPeer(cydMAC);
+    addPeer(pumpMAC);
 }
 
 // ================= LOOP =================
