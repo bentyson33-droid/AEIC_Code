@@ -153,6 +153,8 @@ void addPeer(uint8_t *peerAddr){
   
   if (esp_now_add_peer(&peerInfo) != ESP_OK) {
     Serial.println("Failed to add peer");
+  }
+}
 // ================= SETUP ========================
 void setup() {
 
@@ -438,22 +440,46 @@ void updateman_cb(lv_event_t * e)
     controlOverride.pumpState = lv_obj_has_state(objects.pumpswitch, LV_STATE_CHECKED);
     controlOverride.lightLevel = lv_slider_get_value(objects.lightslider);
     controlOverride.fanLevel = lv_slider_get_value(objects.fanspeed);
-    esp_now_send(humidifierMAC, (uint8_t*)&controlOverride, sizeof(controlOverride));
+    esp_err_t result = esp_now_send(humidifierMAC, (uint8_t*)&controlOverride, sizeof(controlOverride));
+    if (result == ESP_OK) {
+     Serial.println("Sending confirmed");
+   }
+   else {
+     Serial.println("Sending error");
+   }
   
     potOverride1.devAddr = 0;
     potOverride1.override = 1;
     potOverride1.valve_state = lv_obj_has_state(objects.valve1switch, LV_STATE_CHECKED);
-    esp_now_send(xiaoMAC[0], (uint8_t*)&potOverride1, sizeof(potOverride1));
+    esp_err_t result = esp_now_send(xiaoMAC[0], (uint8_t*)&potOverride1, sizeof(potOverride1));
+    if (result == ESP_OK) {
+     Serial.println("Sending confirmed");
+   }
+   else {
+     Serial.println("Sending error");
+   }
     
     potOverride1.devAddr = 0;
     potOverride1.override = 1;
     potOverride1.valve_state = lv_obj_has_state(objects.valve2switch, LV_STATE_CHECKED);
-    esp_now_send(xiaoMAC[1], (uint8_t*)&potOverride2, sizeof(potOverride2));
+    esp_err_t result = esp_now_send(xiaoMAC[1], (uint8_t*)&potOverride2, sizeof(potOverride2));
+  if (result == ESP_OK) {
+     Serial.println("Sending confirmed");
+   }
+   else {
+     Serial.println("Sending error");
+   }
     
     potOverride1.devAddr = 0;
     potOverride1.override = 1;
     potOverride1.valve_state = lv_obj_has_state(objects.valve3switch, LV_STATE_CHECKED);
-    esp_now_send(xiaoMAC[2], (uint8_t*)&potOverride3, sizeof(potOverride3));
+    esp_err_t = esp_now_send(xiaoMAC[2], (uint8_t*)&potOverride3, sizeof(potOverride3));
+  if (result == ESP_OK) {
+   Serial.println("Sending confirmed");
+ }
+ else {
+   Serial.println("Sending error");
+ }
     
 }
 
