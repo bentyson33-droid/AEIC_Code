@@ -31,6 +31,7 @@ typedef struct __attribute__((packed)) {
     uint8_t set;
     int DB;
     boolean override;
+    uint32_t blank;
 } moisture_packet_t;
 moisture_packet_t msp;
 
@@ -86,7 +87,7 @@ void sendStatusData() {
     txData.temperature = t;
     txData.humidity = h;
     txData.soil_moisture = m;
-
+    
     esp_now_send(cydMAC, (uint8_t*)&txData, sizeof(txData));
 }
 
