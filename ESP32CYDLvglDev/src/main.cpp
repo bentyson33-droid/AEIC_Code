@@ -12,17 +12,19 @@
 #define TARGET_XIAO_ADDR 1
 
 // ================= XIAO MAC =======================
-uint8_t xiaoMAC[3][6] = {{0x58, 0x8C, 0x81, 0xA4, 0xCC, 0x14},
-                        {0xE8, 0xF6, 0x0A, 0x16, 0xC0, 0xA4},
+uint8_t xiaoMAC[3][6] = {{0x58, 0x8C, 0x81, 0xA4, 0x75, 0x48},
+                        {0xE8, 0xF6, 0x0A, 0x16, 0xCD, 0xA4},
                         {0xE8, 0xF6, 0x0A, 0x17, 0x0E, 0xC4}};
 
 uint8_t humidifierMAC[] = {0xE8, 0xF6, 0x0A, 0x16, 0xFC, 0x30};
+uint32_t buffer = 0xf;
 
 // ================= PACKETS ========================
 typedef struct __attribute__((packed)) {
     uint8_t set;
     uint8_t DB;
     boolean override;
+    uint32_t buffer;
 } moisture_packet_t;
 moisture_packet_t msp;
 
@@ -159,7 +161,7 @@ void addPeer(uint8_t *peerAddr){
 void setup() {
 
     Serial.begin(9600);
-    WiFi.mode(WIFI_STA);
+    WiFi.mode(WIFI_AP_STA);
 
     // ----- ESP-NOW -----
     if (esp_now_init() != ESP_OK) {
@@ -169,7 +171,7 @@ void setup() {
 
     esp_now_register_recv_cb(onDataRecv);
 
-    addPeer(humidifierMAC[]);
+    addPeer(humidifierMAC);
     addPeer(xiaoMAC[0]);
     addPeer(xiaoMAC[1]);
     addPeer(xiaoMAC[2]);
@@ -386,6 +388,7 @@ void update_pot_cb(lv_event_t * e)
     msp.DB = getToleranceValue(dropdown);
 
     msp.override = 0;  // automatic mode
+    msp.buffer = buffer;
 
     esp_err_t result = esp_now_send(xiaoMAC[potNumber-1], (uint8_t*)&msp, sizeof(msp));
 
@@ -434,53 +437,60 @@ void allupdate_cb(lv_event_t * e)
 void updateman_cb(lv_event_t * e)
 {
     if (lv_event_get_code(e) != LV_EVENT_CLICKED) return;
+
+    // ===== GREENHOUSE MANUAL CONTROL =====
     controlOverride.devAddr = 0;
     controlOverride.override = 1;
     controlOverride.humidState = lv_obj_has_state(objects.humidifierswitch, LV_STATE_CHECKED);
     controlOverride.pumpState = lv_obj_has_state(objects.pumpswitch, LV_STATE_CHECKED);
     controlOverride.lightLevel = lv_slider_get_value(objects.lightslider);
     controlOverride.fanLevel = lv_slider_get_value(objects.fanspeed);
+
     esp_err_t result = esp_now_send(humidifierMAC, (uint8_t*)&controlOverride, sizeof(controlOverride));
     if (result == ESP_OK) {
-     Serial.println("Sending confirmed");
-   }
-   else {
-     Serial.println("Sending error");
-   }
-  
-    potOverride1.devAddr = 0;
+        Serial.println("Sending confirmed");
+    } else {
+        Serial.println("Sending error");
+    }
+    delay(10);
+
+    // ===== POT 1 =====
+    potOverride1.devAddr = 1;
     potOverride1.override = 1;
     potOverride1.valve_state = lv_obj_has_state(objects.valve1switch, LV_STATE_CHECKED);
-    esp_err_t result = esp_now_send(xiaoMAC[0], (uint8_t*)&potOverride1, sizeof(potOverride1));
-    if (result == ESP_OK) {
-     Serial.println("Sending confirmed");
-   }
-   else {
-     Serial.println("Sending error");
-   }
-    
-    potOverride1.devAddr = 0;
-    potOverride1.override = 1;
-    potOverride1.valve_state = lv_obj_has_state(objects.valve2switch, LV_STATE_CHECKED);
-    esp_err_t result = esp_now_send(xiaoMAC[1], (uint8_t*)&potOverride2, sizeof(potOverride2));
-  if (result == ESP_OK) {
-     Serial.println("Sending confirmed");
-   }
-   else {
-     Serial.println("Sending error");
-   }
-    
-    potOverride1.devAddr = 0;
-    potOverride1.override = 1;
-    potOverride1.valve_state = lv_obj_has_state(objects.valve3switch, LV_STATE_CHECKED);
-    esp_err_t = esp_now_send(xiaoMAC[2], (uint8_t*)&potOverride3, sizeof(potOverride3));
-  if (result == ESP_OK) {
-   Serial.println("Sending confirmed");
- }
- else {
-   Serial.println("Sending error");
- }
-    
+
+    esp_err_t result_1 = esp_now_send(xiaoMAC[0], (uint8_t*)&potOverride1, sizeof(potOverride1));
+    if (result_1 == ESP_OK) {
+        Serial.println("Sending confirmed");
+    } else {
+        Serial.println("Sending error");
+    }
+    delay(10);
+
+    // ===== POT 2 =====
+    potOverride2.devAddr = 2;
+    potOverride2.override = 1;
+    potOverride2.valve_state = lv_obj_has_state(objects.valve2switch, LV_STATE_CHECKED);
+
+    esp_err_t result_2 = esp_now_send(xiaoMAC[1], (uint8_t*)&potOverride2, sizeof(potOverride2));
+    if (result_2 == ESP_OK) {
+        Serial.println("Sending confirmed");
+    } else {
+        Serial.println("Sending error");
+    }
+    delay(10);
+
+    // ===== POT 3 =====
+    potOverride3.devAddr = 3;
+    potOverride3.override = 1;
+    potOverride3.valve_state = lv_obj_has_state(objects.valve3switch, LV_STATE_CHECKED);
+
+    esp_err_t result_3 = esp_now_send(xiaoMAC[2], (uint8_t*)&potOverride3, sizeof(potOverride3));
+    if (result_3 == ESP_OK) {
+        Serial.println("Sending confirmed");
+    } else {
+        Serial.println("Sending error");
+    }
 }
 
 // ===================== UPDATED onDataRecv ==========================

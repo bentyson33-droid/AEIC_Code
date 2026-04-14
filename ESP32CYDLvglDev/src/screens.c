@@ -26,13 +26,29 @@ void create_screen_splash() {
             objects.obj0 = obj;
             lv_obj_set_pos(obj, 0, 0);
             lv_obj_set_size(obj, 320, 240);
+            lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW);
+            lv_obj_set_scrollbar_mode(obj, LV_SCROLLBAR_MODE_OFF);
+            lv_obj_set_scroll_dir(obj, LV_DIR_NONE);
+            lv_obj_set_scroll_snap_x(obj, LV_SCROLL_SNAP_NONE);
+            lv_obj_set_scroll_snap_y(obj, LV_SCROLL_SNAP_NONE);
             lv_obj_set_style_bg_color(obj, lv_color_hex(0xff84cc87), LV_PART_MAIN | LV_STATE_DEFAULT);
+            {
+                lv_obj_t *parent_obj = obj;
+                {
+                    // plant
+                    lv_obj_t *obj = lv_image_create(parent_obj);
+                    objects.plant = obj;
+                    lv_obj_set_pos(obj, 86, 65);
+                    lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+                    lv_image_set_src(obj, &img_image);
+                }
+            }
         }
         {
             // Product
             lv_obj_t *obj = lv_label_create(parent_obj);
             objects.product = obj;
-            lv_obj_set_pos(obj, 60, 21);
+            lv_obj_set_pos(obj, 60, 26);
             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
             lv_obj_set_style_text_font(obj, &lv_font_montserrat_16, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_text_align(obj, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -42,7 +58,7 @@ void create_screen_splash() {
             // manualbutton
             lv_obj_t *obj = lv_button_create(parent_obj);
             objects.manualbutton = obj;
-            lv_obj_set_pos(obj, 49, 157);
+            lv_obj_set_pos(obj, 49, 174);
             lv_obj_set_size(obj, 100, 34);
             {
                 lv_obj_t *parent_obj = obj;
@@ -61,7 +77,7 @@ void create_screen_splash() {
             // automaticbutton
             lv_obj_t *obj = lv_button_create(parent_obj);
             objects.automaticbutton = obj;
-            lv_obj_set_pos(obj, 173, 157);
+            lv_obj_set_pos(obj, 173, 174);
             lv_obj_set_size(obj, 100, 34);
             {
                 lv_obj_t *parent_obj = obj;
@@ -89,6 +105,11 @@ void create_screen_main() {
     objects.main = obj;
     lv_obj_set_pos(obj, 0, 0);
     lv_obj_set_size(obj, 320, 240);
+    lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER);
+    lv_obj_set_scrollbar_mode(obj, LV_SCROLLBAR_MODE_OFF);
+    lv_obj_set_scroll_dir(obj, LV_DIR_NONE);
+    lv_obj_set_scroll_snap_x(obj, LV_SCROLL_SNAP_NONE);
+    lv_obj_set_scroll_snap_y(obj, LV_SCROLL_SNAP_NONE);
     {
         lv_obj_t *parent_obj = obj;
         {
@@ -108,9 +129,27 @@ void create_screen_main() {
                 lv_obj_t *parent_obj = obj;
                 {
                     lv_obj_t *obj = lv_tabview_add_tab(parent_obj, "Water ");
-                    lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE);
+                    lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW);
+                    lv_obj_set_scrollbar_mode(obj, LV_SCROLLBAR_MODE_OFF);
+                    lv_obj_set_scroll_dir(obj, LV_DIR_NONE);
+                    lv_obj_set_scroll_snap_x(obj, LV_SCROLL_SNAP_NONE);
+                    lv_obj_set_scroll_snap_y(obj, LV_SCROLL_SNAP_NONE);
                     {
                         lv_obj_t *parent_obj = obj;
+                        {
+                            // waterscale
+                            lv_obj_t *obj = lv_scale_create(parent_obj);
+                            objects.waterscale = obj;
+                            lv_obj_set_pos(obj, 88, 45);
+                            lv_obj_set_size(obj, 40, 136);
+                            lv_scale_set_mode(obj, LV_SCALE_MODE_VERTICAL_RIGHT);
+                            lv_scale_set_range(obj, 0, 100);
+                            lv_scale_set_total_tick_count(obj, 25);
+                            lv_scale_set_major_tick_every(obj, 6);
+                            lv_scale_set_label_show(obj, true);
+                            lv_obj_set_style_length(obj, 5, LV_PART_ITEMS | LV_STATE_DEFAULT);
+                            lv_obj_set_style_length(obj, 10, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+                        }
                         {
                             // valveled1
                             lv_obj_t *obj = lv_led_create(parent_obj);
@@ -163,25 +202,11 @@ void create_screen_main() {
                             lv_label_set_text(obj, "Valve 3");
                         }
                         {
-                            // Water Scale
-                            lv_obj_t *obj = lv_scale_create(parent_obj);
-                            objects.water_scale = obj;
-                            lv_obj_set_pos(obj, 88, 45);
-                            lv_obj_set_size(obj, 51, 136);
-                            lv_scale_set_mode(obj, LV_SCALE_MODE_VERTICAL_RIGHT);
-                            lv_scale_set_range(obj, 0, 100);
-                            lv_scale_set_total_tick_count(obj, 10);
-                            lv_scale_set_major_tick_every(obj, 10);
-                            lv_scale_set_label_show(obj, true);
-                            lv_obj_set_style_length(obj, 5, LV_PART_ITEMS | LV_STATE_DEFAULT);
-                            lv_obj_set_style_length(obj, 10, LV_PART_INDICATOR | LV_STATE_DEFAULT);
-                        }
-                        {
                             lv_obj_t *obj = lv_label_create(parent_obj);
-                            lv_obj_set_pos(obj, 12, 7);
+                            lv_obj_set_pos(obj, 12, 3);
                             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                             lv_obj_set_style_text_align(obj, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
-                            lv_label_set_text(obj, "Water Tank \nLevel");
+                            lv_label_set_text(obj, "Water Tank \nLevel (%)");
                         }
                         {
                             // valve2_state
@@ -220,8 +245,11 @@ void create_screen_main() {
                 }
                 {
                     lv_obj_t *obj = lv_tabview_add_tab(parent_obj, "Data");
-                    lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE);
+                    lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW);
                     lv_obj_set_scrollbar_mode(obj, LV_SCROLLBAR_MODE_OFF);
+                    lv_obj_set_scroll_dir(obj, LV_DIR_NONE);
+                    lv_obj_set_scroll_snap_x(obj, LV_SCROLL_SNAP_NONE);
+                    lv_obj_set_scroll_snap_y(obj, LV_SCROLL_SNAP_NONE);
                     {
                         lv_obj_t *parent_obj = obj;
                         {
@@ -237,7 +265,7 @@ void create_screen_main() {
                                     // potdata1
                                     lv_obj_t *obj = lv_tabview_add_tab(parent_obj, "Pot 1");
                                     objects.potdata1 = obj;
-                                    lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE);
+                                    lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW);
                                     {
                                         lv_obj_t *parent_obj = obj;
                                         {
@@ -310,7 +338,7 @@ void create_screen_main() {
                                     // potdata2
                                     lv_obj_t *obj = lv_tabview_add_tab(parent_obj, "Pot 2");
                                     objects.potdata2 = obj;
-                                    lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE);
+                                    lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW);
                                     {
                                         lv_obj_t *parent_obj = obj;
                                         {
@@ -383,7 +411,7 @@ void create_screen_main() {
                                     // potdata3
                                     lv_obj_t *obj = lv_tabview_add_tab(parent_obj, "Pot 3");
                                     objects.potdata3 = obj;
-                                    lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE);
+                                    lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW);
                                     {
                                         lv_obj_t *parent_obj = obj;
                                         {
@@ -458,8 +486,11 @@ void create_screen_main() {
                 }
                 {
                     lv_obj_t *obj = lv_tabview_add_tab(parent_obj, "Settings");
-                    lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE);
+                    lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW);
                     lv_obj_set_scrollbar_mode(obj, LV_SCROLLBAR_MODE_OFF);
+                    lv_obj_set_scroll_dir(obj, LV_DIR_NONE);
+                    lv_obj_set_scroll_snap_x(obj, LV_SCROLL_SNAP_NONE);
+                    lv_obj_set_scroll_snap_y(obj, LV_SCROLL_SNAP_NONE);
                     {
                         lv_obj_t *parent_obj = obj;
                         {
@@ -479,7 +510,7 @@ void create_screen_main() {
                                     // allpotset
                                     lv_obj_t *obj = lv_tabview_add_tab(parent_obj, "All");
                                     objects.allpotset = obj;
-                                    lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE);
+                                    lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW);
                                     lv_obj_set_scrollbar_mode(obj, LV_SCROLLBAR_MODE_OFF);
                                     lv_obj_set_scroll_dir(obj, LV_DIR_NONE);
                                     lv_obj_set_scroll_snap_x(obj, LV_SCROLL_SNAP_NONE);
@@ -668,7 +699,7 @@ void create_screen_main() {
                                     // pot1
                                     lv_obj_t *obj = lv_tabview_add_tab(parent_obj, "Pot 1");
                                     objects.pot1 = obj;
-                                    lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE);
+                                    lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW);
                                     {
                                         lv_obj_t *parent_obj = obj;
                                         {
@@ -775,7 +806,7 @@ void create_screen_main() {
                                     // pot2
                                     lv_obj_t *obj = lv_tabview_add_tab(parent_obj, "Pot 2");
                                     objects.pot2 = obj;
-                                    lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE);
+                                    lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW);
                                     {
                                         lv_obj_t *parent_obj = obj;
                                         {
@@ -881,7 +912,7 @@ void create_screen_main() {
                                     // pot3
                                     lv_obj_t *obj = lv_tabview_add_tab(parent_obj, "Pot 3");
                                     objects.pot3 = obj;
-                                    lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE);
+                                    lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW);
                                     {
                                         lv_obj_t *parent_obj = obj;
                                         {
@@ -1002,6 +1033,7 @@ void create_screen_manual() {
     objects.manual = obj;
     lv_obj_set_pos(obj, 0, 0);
     lv_obj_set_size(obj, 320, 240);
+    lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER);
     {
         lv_obj_t *parent_obj = obj;
         {
@@ -1012,7 +1044,7 @@ void create_screen_manual() {
             lv_obj_set_size(obj, 320, 240);
             lv_tabview_set_tab_bar_position(obj, LV_DIR_TOP);
             lv_tabview_set_tab_bar_size(obj, 32);
-            lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW);
+            lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW);
             lv_obj_set_scrollbar_mode(obj, LV_SCROLLBAR_MODE_OFF);
             lv_obj_set_scroll_dir(obj, LV_DIR_NONE);
             lv_obj_set_scroll_snap_x(obj, LV_SCROLL_SNAP_NONE);
@@ -1022,6 +1054,10 @@ void create_screen_manual() {
                 {
                     lv_obj_t *obj = lv_tabview_add_tab(parent_obj, "Greenhouse");
                     lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW);
+                    lv_obj_set_scrollbar_mode(obj, LV_SCROLLBAR_MODE_OFF);
+                    lv_obj_set_scroll_dir(obj, LV_DIR_NONE);
+                    lv_obj_set_scroll_snap_x(obj, LV_SCROLL_SNAP_NONE);
+                    lv_obj_set_scroll_snap_y(obj, LV_SCROLL_SNAP_NONE);
                     {
                         lv_obj_t *parent_obj = obj;
                         {
@@ -1137,6 +1173,9 @@ void create_screen_manual() {
                     lv_obj_t *obj = lv_tabview_add_tab(parent_obj, "Pots");
                     lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW);
                     lv_obj_set_scrollbar_mode(obj, LV_SCROLLBAR_MODE_OFF);
+                    lv_obj_set_scroll_dir(obj, LV_DIR_NONE);
+                    lv_obj_set_scroll_snap_x(obj, LV_SCROLL_SNAP_NONE);
+                    lv_obj_set_scroll_snap_y(obj, LV_SCROLL_SNAP_NONE);
                     {
                         lv_obj_t *parent_obj = obj;
                         {
@@ -1175,7 +1214,7 @@ void create_screen_manual() {
                             // homebuttonman
                             lv_obj_t *obj = lv_button_create(parent_obj);
                             objects.homebuttonman = obj;
-                            lv_obj_set_pos(obj, 181, 148);
+                            lv_obj_set_pos(obj, 156, 148);
                             lv_obj_set_size(obj, 66, 35);
                             {
                                 lv_obj_t *parent_obj = obj;
