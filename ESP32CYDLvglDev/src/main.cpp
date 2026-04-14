@@ -145,7 +145,14 @@ float calculateTolerance(float target, float tolerancePercent);
 
 //     esp_now_send(humidifierMAC, (uint8_t*)&packet, sizeof(packet));
 // }
-
+void addPeer(uint8_t *peerAddr){
+  esp_now_peer_info_t peerInfo = {};
+  memcpy(peerInfo.peer_addr, peerAddr, 6);
+  peerInfo.channel = 0;
+  peerInfo.encrypt = false;
+  
+  if (esp_now_add_peer(&peerInfo) != ESP_OK) {
+    Serial.println("Failed to add peer");
 // ================= SETUP ========================
 void setup() {
 
@@ -160,16 +167,10 @@ void setup() {
 
     esp_now_register_recv_cb(onDataRecv);
 
-    esp_now_peer_info_t peerInfo = {};
-    memcpy(peerInfo.peer_addr, xiaoMAC, 6);
-    peerInfo.channel = 0;
-    peerInfo.encrypt = false;
-    esp_now_add_peer(&peerInfo);
-
-    memcpy(peerInfo.peer_addr, humidifierMAC, 6);
-    peerInfo.channel = 0;
-    peerInfo.encrypt = false;
-    esp_now_add_peer(&peerInfo);
+    addPeer(humidifierMAC[]);
+    addPeer(xiaoMAC[0]);
+    addPeer(xiaoMAC[1]);
+    addPeer(xiaoMAC[2]);
 
     for (int i = 0; i < 3; i++) {
         potsStruct[i].temperature = NAN;
