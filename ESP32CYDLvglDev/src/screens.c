@@ -288,7 +288,7 @@ void create_screen_main() {
                                             // pot1_moisture
                                             lv_obj_t *obj = lv_label_create(parent_obj);
                                             objects.pot1_moisture = obj;
-                                            lv_obj_set_pos(obj, 186, 19);
+                                            lv_obj_set_pos(obj, 152, 19);
                                             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                                             lv_label_set_text(obj, "--");
                                         }
@@ -296,7 +296,7 @@ void create_screen_main() {
                                             // pot1_vpd
                                             lv_obj_t *obj = lv_label_create(parent_obj);
                                             objects.pot1_vpd = obj;
-                                            lv_obj_set_pos(obj, 186, 114);
+                                            lv_obj_set_pos(obj, 152, 114);
                                             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                                             lv_label_set_text(obj, "--");
                                         }
@@ -304,7 +304,7 @@ void create_screen_main() {
                                             // pot1_humidity
                                             lv_obj_t *obj = lv_label_create(parent_obj);
                                             objects.pot1_humidity = obj;
-                                            lv_obj_set_pos(obj, 186, 82);
+                                            lv_obj_set_pos(obj, 152, 82);
                                             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                                             lv_label_set_text(obj, "--");
                                         }
@@ -320,7 +320,7 @@ void create_screen_main() {
                                             // pot1_temp
                                             lv_obj_t *obj = lv_label_create(parent_obj);
                                             objects.pot1_temp = obj;
-                                            lv_obj_set_pos(obj, 186, 49);
+                                            lv_obj_set_pos(obj, 152, 49);
                                             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                                             lv_label_set_text(obj, "--");
                                         }
@@ -361,7 +361,7 @@ void create_screen_main() {
                                             // pot2_moisture
                                             lv_obj_t *obj = lv_label_create(parent_obj);
                                             objects.pot2_moisture = obj;
-                                            lv_obj_set_pos(obj, 186, 19);
+                                            lv_obj_set_pos(obj, 152, 19);
                                             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                                             lv_label_set_text(obj, "--");
                                         }
@@ -369,7 +369,7 @@ void create_screen_main() {
                                             // pot2_vpd
                                             lv_obj_t *obj = lv_label_create(parent_obj);
                                             objects.pot2_vpd = obj;
-                                            lv_obj_set_pos(obj, 186, 114);
+                                            lv_obj_set_pos(obj, 152, 114);
                                             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                                             lv_label_set_text(obj, "--");
                                         }
@@ -377,7 +377,7 @@ void create_screen_main() {
                                             // pot2_humidity
                                             lv_obj_t *obj = lv_label_create(parent_obj);
                                             objects.pot2_humidity = obj;
-                                            lv_obj_set_pos(obj, 186, 82);
+                                            lv_obj_set_pos(obj, 152, 82);
                                             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                                             lv_label_set_text(obj, "--");
                                         }
@@ -393,7 +393,7 @@ void create_screen_main() {
                                             // pot2_temp
                                             lv_obj_t *obj = lv_label_create(parent_obj);
                                             objects.pot2_temp = obj;
-                                            lv_obj_set_pos(obj, 186, 49);
+                                            lv_obj_set_pos(obj, 152, 49);
                                             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                                             lv_label_set_text(obj, "--");
                                         }
@@ -434,7 +434,7 @@ void create_screen_main() {
                                             // pot3_moisture
                                             lv_obj_t *obj = lv_label_create(parent_obj);
                                             objects.pot3_moisture = obj;
-                                            lv_obj_set_pos(obj, 186, 19);
+                                            lv_obj_set_pos(obj, 152, 19);
                                             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                                             lv_label_set_text(obj, "--");
                                         }
@@ -442,7 +442,7 @@ void create_screen_main() {
                                             // pot3_vpd
                                             lv_obj_t *obj = lv_label_create(parent_obj);
                                             objects.pot3_vpd = obj;
-                                            lv_obj_set_pos(obj, 186, 114);
+                                            lv_obj_set_pos(obj, 152, 114);
                                             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                                             lv_label_set_text(obj, "--");
                                         }
@@ -450,7 +450,7 @@ void create_screen_main() {
                                             // pot3_humidity
                                             lv_obj_t *obj = lv_label_create(parent_obj);
                                             objects.pot3_humidity = obj;
-                                            lv_obj_set_pos(obj, 186, 82);
+                                            lv_obj_set_pos(obj, 152, 82);
                                             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                                             lv_label_set_text(obj, "--");
                                         }
@@ -466,7 +466,7 @@ void create_screen_main() {
                                             // pot3_temp
                                             lv_obj_t *obj = lv_label_create(parent_obj);
                                             objects.pot3_temp = obj;
-                                            lv_obj_set_pos(obj, 186, 49);
+                                            lv_obj_set_pos(obj, 152, 49);
                                             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                                             lv_label_set_text(obj, "--");
                                         }

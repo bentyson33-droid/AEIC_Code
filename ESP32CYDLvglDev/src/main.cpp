@@ -10,8 +10,18 @@
 // ================= DEVICE DEFINES =================
 #define DEVICE_TYPE_CYD  0x02
 #define TARGET_XIAO_ADDR 1
+// #define BACKLIGHT_PIN 21   //Sleep mode (not used)
+// #define PWM_CHANNEL 0
+// #define PWM_FREQ 5000
+// #define PWM_RESOLUTION 8   // 0–255 brightness
+// unsigned long lastTouchTime = 0;
+// bool screenDimmed = false;
+// #define DIM_TIMEOUT 10000      // 10s
+// #define SLEEP_TIMEOUT 30000    // 30s
+volatile bool newPotData[3] = {false, false, false};
+volatile bool newPumpData = false;
 
-// ================= XIAO MAC =======================
+// ================= XIAO MACS =======================
 uint8_t xiaoMAC[3][6] = {{0x58, 0x8C, 0x81, 0xA4, 0x75, 0x48},
                         {0xE8, 0xF6, 0x0A, 0x16, 0xCD, 0xA4},
                         {0xE8, 0xF6, 0x0A, 0x17, 0x0E, 0xC4}};
@@ -112,42 +122,7 @@ void updateman_cb(lv_event_t * e);
 int getToleranceValue(lv_obj_t * dropdown);
 float calculateTolerance(float target, float tolerancePercent);
 
-// ================= SEND COMMAND =================
-// void sendMoistureTarget() {
-
-//     packet for pot 1
-//      cmd1.set = moisturespinbox
-//      cmd1.DB = moistureDB
-//      cmd1.override = 0
-//     cmd1.moisture = moisture;
-
-//     packet for pot 2
-//      cmd2.set = moisturespinbox
-//      cmd2.DB = moistureDB
-//      cmd2.override = 0
-//     cmd2.moisture = moisture;
-
-//     packet for pot 3
-//      cmd3.set = moisturespinbox
-//      cmd3.DB = moistureDB
-//      cmd3.override = 0
-//     cmd3.moisture = moisture;
-
-//     esp_now_send(xiaoMAC[1], (uint8_t*)&cmd1, sizeof(cmd1));
-//     esp_now_send(xiaoMAC[2], (uint8_t*)&cmd2, sizeof(cmd2));
-//     esp_now_send(xiaoMAC[3], (uint8_t*)&cmd3, sizeof(cmd3));
-//     delay(2500);
-// }
-
-//void sendGreenHouseTarget() {
-//     greenhouse_packet_t packet;
-//     packet.type = 0;
-//     packet.temp_target = lv_spinbox_get_value(objects.temp_spinbox);
-//     packet.humidity_target = lv_spinbox_get_value(objects.humidity_spinbox);
-
-//     esp_now_send(humidifierMAC, (uint8_t*)&packet, sizeof(packet));
-// }
-void addPeer(uint8_t *peerAddr){
+void addPeer(uint8_t *peerAddr){                            
   esp_now_peer_info_t peerInfo = {};
   memcpy(peerInfo.peer_addr, peerAddr, 6);
   peerInfo.channel = 0;
@@ -197,7 +172,13 @@ void setup() {
     lv_indev_set_type(indev, LV_INDEV_TYPE_POINTER);
     lv_indev_set_read_cb(indev, touchscreen_read);
 
-    // Initialize EEZ UI
+    // ledcSetup(PWM_CHANNEL, PWM_FREQ, PWM_RESOLUTION);            //Sleep mode (not used)
+    // ledcAttachPin(BACKLIGHT_PIN, PWM_CHANNEL);
+
+    // // Set brightness (0–255)
+    // ledcWrite(PWM_CHANNEL, 120);   // try 80–150 for battery
+
+    // ------- Initialize EEZ UI ---------
     ui_init();
 
     lv_obj_add_event_cb(objects.automaticbutton, automaticbutton_cb, LV_EVENT_CLICKED, NULL);
@@ -258,12 +239,62 @@ void setup() {
 
 // ================= LOOP ==========================
 void loop() {
-    // Update label colors based on valid data
+
+    // ----------- POT DATA UI UPDATE -----------
     for (int i = 0; i < 3; i++) {
+
+        if (newPotData[i]) {
+            newPotData[i] = false;
+
+            status_packet_t tmp = potsStruct[i];
+            tmp.soil_moisture = fminf(fmaxf(tmp.soil_moisture, 0.0f), 100.0f);      //Calculations
+            float tempC = (tmp.temperature - 32.0f) * 5.0f / 9.0f;
+            float svp = 0.6108f * expf((17.27f * tempC) / (tempC + 237.3f));
+            float vpd = svp * (1.0f - tmp.humidity / 100.0f);
+            tmp.soil_moisture = tmp.soil_moisture;
+            bool valveOn = tmp.valve_state;
+
+            switch(i) {
+                case 0:
+                    if (objects.pot1_temp) lv_label_set_text_fmt(objects.pot1_temp, "%.1f °F / %.1f °C", tmp.temperature, tempC);
+                    if (objects.pot1_humidity) lv_label_set_text_fmt(objects.pot1_humidity, "%.1f %%", tmp.humidity);
+                    if (objects.pot1_moisture) lv_label_set_text_fmt(objects.pot1_moisture, "%.1f %%", tmp.soil_moisture);
+                    if (objects.pot1_vpd) lv_label_set_text_fmt(objects.pot1_vpd, "%.2f kPa", vpd);
+                    if (objects.valveled1) lv_led_set_color(objects.valveled1,
+                        valveOn ? lv_color_hex(0x00FF00) : lv_color_hex(0x808080));
+                    if (objects.valve1_state) lv_label_set_text(objects.valve1_state, valveOn ? "ON" : "OFF");
+                    break;
+
+                case 1:
+                    if (objects.pot2_temp) lv_label_set_text_fmt(objects.pot2_temp, "%.1f °F / %.1f °C", tmp.temperature, tempC);
+                    if (objects.pot2_humidity) lv_label_set_text_fmt(objects.pot2_humidity, "%.1f %%", tmp.humidity);
+                    if (objects.pot2_moisture) lv_label_set_text_fmt(objects.pot2_moisture, "%.1f %%", tmp.soil_moisture);
+                    if (objects.pot2_vpd) lv_label_set_text_fmt(objects.pot2_vpd, "%.2f kPa", vpd);
+                    if (objects.valveled2) lv_led_set_color(objects.valveled2,
+                        valveOn ? lv_color_hex(0x00FF00) : lv_color_hex(0x808080));
+                    if (objects.valve2_state) lv_label_set_text(objects.valve2_state, valveOn ? "ON" : "OFF");
+                    break;
+
+                case 2:
+                    if (objects.pot3_temp) lv_label_set_text_fmt(objects.pot3_temp, "%.1f °F / %.1f °C", tmp.temperature, tempC);
+                    if (objects.pot3_humidity) lv_label_set_text_fmt(objects.pot3_humidity, "%.1f %%", tmp.humidity);
+                    if (objects.pot3_moisture) lv_label_set_text_fmt(objects.pot3_moisture, "%.1f %%", tmp.soil_moisture);
+                    if (objects.pot3_vpd) lv_label_set_text_fmt(objects.pot3_vpd, "%.2f kPa", vpd);
+                    if (objects.valveled3) lv_led_set_color(objects.valveled3,
+                        valveOn ? lv_color_hex(0x00FF00) : lv_color_hex(0x808080));
+                    if (objects.valve3_state) lv_label_set_text(objects.valve3_state, valveOn ? "ON" : "OFF");
+                    break;
+            }
+        }
+    }
+
+    // ----------- LABEL COLOR UPDATE -----------
+    for (int i = 0; i < 3; i++) {
+
         bool valid = !isnan(potsStruct[i].temperature) && !isnan(potsStruct[i].humidity);
 
-        lv_obj_t *tempLabel = nullptr;
-        lv_obj_t *humidityLabel = nullptr;
+        lv_obj_t *tempLabel = NULL;
+        lv_obj_t *humidityLabel = NULL;
 
         switch(i) {
             case 0: tempLabel = objects.pot1_temp; humidityLabel = objects.pot1_humidity; break;
@@ -271,15 +302,33 @@ void loop() {
             case 2: tempLabel = objects.pot3_temp; humidityLabel = objects.pot3_humidity; break;
         }
 
-        if (valid) {
-            lv_obj_set_style_text_color(tempLabel, lv_color_hex(0x000000), LV_PART_MAIN);
-            lv_obj_set_style_text_color(humidityLabel, lv_color_hex(0x000000), LV_PART_MAIN);
-        } else {
-            lv_obj_set_style_text_color(tempLabel, lv_color_hex(0xFF0000), LV_PART_MAIN);
-            lv_obj_set_style_text_color(humidityLabel, lv_color_hex(0xFF0000), LV_PART_MAIN);
+        //Red labels if not receiving, black if receiving
+        if (tempLabel && humidityLabel) {   
+            if (valid) {
+                lv_obj_set_style_text_color(tempLabel, lv_color_hex(0x000000), LV_PART_MAIN);
+                lv_obj_set_style_text_color(humidityLabel, lv_color_hex(0x000000), LV_PART_MAIN);
+            } else {
+                lv_obj_set_style_text_color(tempLabel, lv_color_hex(0xFF0000), LV_PART_MAIN);
+                lv_obj_set_style_text_color(humidityLabel, lv_color_hex(0xFF0000), LV_PART_MAIN);
+            }
         }
     }
 
+    // ----------- PUMP / WATER LEVEL -----------
+    if (newPumpData) {
+        newPumpData = false;
+
+        float level = pumpData.water_level;
+
+        if (level < 0) level = 0;       //Clamping
+        if (level > 100) level = 100;
+
+        if (objects.water_level) {
+            lv_bar_set_value(objects.water_level, (int)level, LV_ANIM_ON);
+        }
+    }
+
+    // ----------- LVGL CORE -----------
     lv_timer_handler();
     lv_tick_inc(5);
     delay(5);
@@ -381,10 +430,9 @@ void update_pot_cb(lv_event_t * e)
     }
 
     if (spin == NULL || dropdown == NULL) return;
-
+    
     msp.set = lv_spinbox_get_value(spin);
 
-    //int tolPercent = getToleranceValue(dropdown);
     msp.DB = getToleranceValue(dropdown);
 
     msp.override = 0;  // automatic mode
@@ -399,21 +447,12 @@ void update_pot_cb(lv_event_t * e)
      Serial.println("Sending error");
    }
 
-    // Serial.print("Sent Pot ");
-    // Serial.print(potNumber);
-    // Serial.println(xiaoMAC[potNumber]);
-    // Serial.print(" Set=");
-    // Serial.print(msp.set);
-    // Serial.print(" DB=");
-    // Serial.println(msp.DB);
 }
 
 // ===================== GREENHOUSE UPDATE =============================
 void allupdate_cb(lv_event_t * e)
 {
     if (lv_event_get_code(e) != LV_EVENT_CLICKED) return;
-
-    // uint8_t humidity = lv_spinbox_get_value(objects.humidity_spinbox);
 
     HumidTempSet.humid_set = lv_spinbox_get_value(objects.humidity_spinbox);
     HumidTempSet.temp_set = lv_spinbox_get_value(objects.temp_spinbox);
@@ -493,7 +532,7 @@ void updateman_cb(lv_event_t * e)
     }
 }
 
-// ===================== UPDATED onDataRecv ==========================
+// =========================== onDataRecv ==========================
 void onDataRecv(const uint8_t *, const uint8_t *incomingData, int len) {
 
     // ===== POT STATUS PACKET =====
@@ -503,77 +542,24 @@ void onDataRecv(const uint8_t *, const uint8_t *incomingData, int len) {
         memcpy(&tmp, incomingData, sizeof(tmp));
 
         int idx = tmp.devAddr - 1;
+
         if (idx >= 0 && idx < 3) {
-
-            potsStruct[idx] = tmp;
-
-            float tempC = (tmp.temperature - 32.0f) * 5.0f / 9.0f;
-            float svp = 0.6108f * expf((17.27f * tempC) / (tempC + 237.3f));
-            float vpd = svp * (1.0f - tmp.humidity / 100.0f);
-
-            bool valveOn = tmp.valve_state;
-
-            switch(idx) {
-                case 0:
-                    lv_label_set_text_fmt(objects.pot1_temp, "%.1f °F / %.1f °C", tmp.temperature, tempC);
-                    lv_label_set_text_fmt(objects.pot1_humidity, "%.1f %%", tmp.humidity);
-                    lv_label_set_text_fmt(objects.pot1_moisture, "%.1f %%", tmp.soil_moisture);
-                    lv_label_set_text_fmt(objects.pot1_vpd, "%.2f kPa", vpd);
-
-                    // LED + label
-                    lv_obj_set_style_bg_color(objects.valveled1,
-                        valveOn ? lv_color_hex(0x00FF00) : lv_color_hex(0x808080),
-                        LV_PART_MAIN);
-                    lv_label_set_text(objects.valve1_state,
-                        valveOn ? "ON" : "OFF");
-                    break;
-
-                case 1:
-                    lv_label_set_text_fmt(objects.pot2_temp, "%.1f °F / %.1f °C", tmp.temperature, tempC);
-                    lv_label_set_text_fmt(objects.pot2_humidity, "%.1f %%", tmp.humidity);
-                    lv_label_set_text_fmt(objects.pot2_moisture, "%.1f %%", tmp.soil_moisture);
-                    lv_label_set_text_fmt(objects.pot2_vpd, "%.2f kPa", vpd);
-
-                    lv_obj_set_style_bg_color(objects.valveled2,
-                        valveOn ? lv_color_hex(0x00FF00) : lv_color_hex(0x808080),
-                        LV_PART_MAIN);
-                    lv_label_set_text(objects.valve2_state,
-                        valveOn ? "ON" : "OFF");
-                    break;
-
-                case 2:
-                    lv_label_set_text_fmt(objects.pot3_temp, "%.1f °F / %.1f °C", tmp.temperature, tempC);
-                    lv_label_set_text_fmt(objects.pot3_humidity, "%.1f %%", tmp.humidity);
-                    lv_label_set_text_fmt(objects.pot3_moisture, "%.1f %%", tmp.soil_moisture);
-                    lv_label_set_text_fmt(objects.pot3_vpd, "%.2f kPa", vpd);
-
-                    lv_obj_set_style_bg_color(objects.valveled3,
-                        valveOn ? lv_color_hex(0x00FF00) : lv_color_hex(0x808080),
-                        LV_PART_MAIN);
-                    lv_label_set_text(objects.valve3_state,
-                        valveOn ? "ON" : "OFF");
-                    break;
-            }
+            potsStruct[idx] = tmp;     // store latest data
+            newPotData[idx] = true;    // flag for UI update in loop()
         }
 
         Serial.println("=== NEW STATUS RECEIVED ===");
-        Serial.print("DevAddr: "); Serial.println(tmp.devAddr);
+        Serial.print("DevAddr: ");
+        Serial.println(tmp.devAddr);
     }
 
     // ===== PUMP / WATER LEVEL PACKET =====
     else if (len == sizeof(pump_packet_t)) {
 
         memcpy(&pumpData, incomingData, sizeof(pumpData));
-
-        float level = pumpData.water_level;
-
-        // clamp 0–100
-        if (level < 0) level = 0;
-        if (level > 100) level = 100;
-
-        lv_bar_set_value(objects.water_level, (int)pumpData.water_level, LV_ANIM_ON);
+        newPumpData = true;   // flag for UI update in loop()
 
         Serial.print("Water Level: ");
-        Serial.println(level);
+        Serial.println(pumpData.water_level);
     }
 }
