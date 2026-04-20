@@ -3,6 +3,8 @@
 #include <esp_now.h>
 
 // ================= DEVICE DEFINES =================
+// Address of Screen is 0
+// Pots are 1, 2, and 3
 #define DEVICE_ADDR 4
 #define DEVICE_TYPE_XIAO 0x01
 
@@ -18,7 +20,7 @@ float avg_humid = 50;
 float water_level = 50;
 int sendCount = 0;
 boolean override =0;
-int lightLevel =0;
+int lightLevel =255;
 int fanLevel =0;
 boolean humidState =0;
 boolean pumpState =0;
@@ -30,11 +32,12 @@ uint8_t lightOFF =0;
 // ================= PINS =================
 #define fanPin A0
 #define lightPin A1
-#define pumpPin D4
+#define pumpPin D2
 #define humidifierPin D3
 #define waterlevelEcho D6
 #define waterlevelTrig D9
 // ================= PACKETS =================
+// Packet from Sceen with User Set Points
 typedef struct __attribute__((packed)) {
     uint8_t temp_set;
     uint8_t humid_set;
@@ -45,6 +48,7 @@ typedef struct __attribute__((packed)) {
 } set_packet_t;
 set_packet_t setPoints;
 
+// Data points sent to Screen
 typedef struct __attribute__((packed)) {
     uint8_t devAddr;
     uint8_t devType;
@@ -56,6 +60,7 @@ typedef struct __attribute__((packed)) {
 } status_packet_t;
 status_packet_t txData;
 
+// Packet for Manual Mode from Screen
 typedef struct __attribute__((packed)) {
     uint8_t devAddr;
     boolean override;
@@ -66,13 +71,14 @@ typedef struct __attribute__((packed)) {
 } manual_packet_t;
 manual_packet_t manualMode;
 
+// Packet from Pots to Pump
 typedef struct __attribute__((packed)) {
     uint8_t devAddr;
     uint8_t valve_state;
     float temp;
     float humidity;
 } sensor_packet_t;
-
+// Temporary Packet to set values
 sensor_packet_t SensorData;
 // Creating Packets for each pot
 sensor_packet_t pot1;
@@ -86,7 +92,7 @@ sensor_packet_t potData[3] = {pot1, pot2, pot3};
 void onDataRecv(const uint8_t *, const uint8_t *data, int len) {
   Serial.println("message recieved");
   Serial.println(" ");
-
+    // Checking which packet has been recieved
     if (len == sizeof(set_packet_t)){
       // Copy incoming data to memory packet of set points
       memcpy(&setPoints, data, len);
@@ -120,16 +126,18 @@ void onDataRecv(const uint8_t *, const uint8_t *data, int len) {
     delay(100);
 }
 // =================== SEND COMMAND ================
+// Sending Data to Screen
 void sendStatusData() {
-    txData.devAddr = DEVICE_ADDR;
-    txData.devType = DEVICE_TYPE_XIAO;
-    txData.fan_state = analogRead(fanPin);
-    txData.pump_state = analogRead(pumpPin);
-    txData.humidifier_state = digitalRead(humidifierPin);
-    txData.light_level = analogRead(lightPin);
-    txData.water_level = water_level;
-
-    esp_now_send(cydMAC, (uint8_t*)&txData, sizeof(txData));
+  // Setting values in Packet going to Screen
+  txData.devAddr = DEVICE_ADDR;
+  txData.devType = DEVICE_TYPE_XIAO;
+  txData.fan_state = fanLevel;
+  txData.pump_state = digitalRead(pumpPin);
+  txData.humidifier_state = digitalRead(humidifierPin);
+  txData.light_level = lightLevel;
+  txData.water_level = water_level;
+  // Sending to Screen 
+  esp_now_send(cydMAC, (uint8_t*)&txData, sizeof(txData));
 }
 
 // ================= SETUP =================
@@ -138,7 +146,7 @@ void setup() {
     delay(100);
     // Serial.println("Yo");
     // delay(1000);
-    WiFi.mode(WIFI_STA);
+    WiFi.mode(WIFI_AP_STA);
 
     pinMode(fanPin, OUTPUT);
     pinMode(lightPin, OUTPUT);
@@ -153,7 +161,7 @@ void setup() {
     }
 
     esp_now_register_recv_cb(onDataRecv);
-
+    // Adding the Screen so it can send info
     esp_now_peer_info_t peerInfo = {};
     memcpy(peerInfo.peer_addr, cydMAC, 6);
     peerInfo.channel = 0;
@@ -168,6 +176,9 @@ void loop() {
     return;
   }
   else {
+    analogWrite(lightPin, lightLevel);
+    analogWrite(fanPin, fanLevel);
+
     // Delays are set so loop runs every 500 milliseconds
     delay(99.988); 
 
@@ -187,11 +198,11 @@ void loop() {
     // Speed of sound is ~0.0343 cm/µs
     distance = (duration * 0.0343) / 2;
   
-    Serial.println(distance);
+    // Serial.println(distance);
     // empty = 16 cm
     // full = 8 cm
     water_level = (1 - (distance - 8)/8)*100;
-    
+    Serial.println(water_level);
     // Finding average temp & humidity
     avg_temp = 0;
     avg_humid = 0;
@@ -205,18 +216,18 @@ void loop() {
 
 
   // Checking Temp to turn on/off fan
-    if (avg_temp > setPoints.temp_set + setPoints.temp_DB & water_level > 10){
-      pinMode(fanPin, HIGH);
+    if (avg_temp > setPoints.temp_set + setPoints.temp_DB & fanLevel != 255){
+      fanLevel = 255;
     }
-    else if (avg_temp < setPoints.temp_set - setPoints.temp_DB){
-      pinMode(fanPin, LOW);
+    else if (avg_temp < setPoints.temp_set - setPoints.temp_DB & fanLevel != 0){
+      fanLevel = 0;
     }
   // Chekcing Humidity to turn on/off humidifer
-    if (avg_humid < setPoints.humid_set - setPoints.humid_DB & water_level > 10){
-      pinMode(humidifierPin, HIGH);
+    if ((avg_humid < setPoints.humid_set - setPoints.humid_DB) & (water_level > 10)){
+      digitalWrite(humidifierPin, HIGH);
     }
-    if (avg_humid > setPoints.humid_set + setPoints.humid_DB){
-      pinMode(humidifierPin, LOW);
+    else if ((avg_humid > setPoints.humid_set + setPoints.humid_DB) || (water_level < 10)){
+      digitalWrite(humidifierPin, LOW);
     }
     delay(300);
 
@@ -228,13 +239,13 @@ void loop() {
           digitalWrite(pumpPin, HIGH);
     }
     else {
-      analogWrite(pumpPin, 0);
+      digitalWrite(pumpPin, 0);
     }
 
 
     // Counting loop for sending every 10 Cycles or 5 seconds
     if (sendCount == 9){
-        // sendStatusData();
+        sendStatusData();
         sendCount=0;
     }
     else {
@@ -261,7 +272,5 @@ void loop() {
     //   }
     //   else {lightOFF = lightOFF + 1;}
     // }
-    analogWrite(lightPin, lightLevel);
   }
-
 }

@@ -4,16 +4,21 @@
 #include "DHT.h"
 
 // ================= DEVICE DEFINES =================
-#define DEVICE_ADDR 1
+// Pot Number = DEVICE_ADDR
+// 0 is Screen and 4 is pump
+#define DEVICE_ADDR 3
 #define DEVICE_TYPE_XIAO 0x01
 
 // ================= MAC ADDRESSES =================
 // REPLACE with your CYD MAC
 uint8_t cydMAC[] = {0x14, 0x33, 0x5C, 0x6B, 0xA8, 0x68}; //5C:01:3B:50:11:D0
+// REPLACE with Control Board (Pump) MAC
 uint8_t pumpMAC[] = {0xE8, 0xF6, 0x0A, 0x16, 0xFC, 0x30};
 
 // ================= VARIABLES ==================
-float t,h,m =0;
+float t,h =0;
+float m = 0;
+uint8_t byte_m =0;
 uint8_t sendCount =0;
 boolean override =0;
 
@@ -27,14 +32,16 @@ const int moisturePin = A2;
 DHT dht(DHTPIN, DHTTYPE);
 
 // ================= PACKETS =================
+// Pakcet from Screen with set points and tolerances
 typedef struct __attribute__((packed)) {
     uint8_t set;
-    int DB;
+    uint8_t DB;
     boolean override;
     uint32_t blank;
 } moisture_packet_t;
 moisture_packet_t msp;
 
+// Packet to Screen for Data to display
 typedef struct __attribute__((packed)) {
     uint8_t devAddr;
     uint8_t devType;
@@ -46,6 +53,7 @@ typedef struct __attribute__((packed)) {
 } status_packet_t;
 status_packet_t txData;
 
+// Packet to Pump with Valve, temp, and humidity
 typedef struct __attribute__((packed)) {
     uint8_t devAddr;
     uint8_t valve_state;
@@ -54,6 +62,7 @@ typedef struct __attribute__((packed)) {
 } pump_packet_t;
 pump_packet_t pumpPacket;
 
+// Packet from Screen Setting Manual Mode
 typedef struct __attribute__((packed)) {
     uint8_t devAddr;
     boolean override;
@@ -65,10 +74,13 @@ manual_packet_t manualMode;
 void onDataRecv(const uint8_t *, const uint8_t *data, int len) {
     Serial.println("message recieved");
     Serial.println(" ");
-
+    // Check to see which message is recieved
     if (len == sizeof(moisture_packet_t)) {
+        // Copy values to local packets for use
         memcpy(&msp, data, len);
         override = msp.override;
+        Serial.println("Auto Recieved");
+        Serial.println(override);
     }
     if (len == sizeof(manual_packet_t)){
         memcpy(&manualMode, data, len);
@@ -76,30 +88,35 @@ void onDataRecv(const uint8_t *, const uint8_t *data, int len) {
         digitalWrite(valvePin, manualMode.valve_state);
         Serial.println("Override Recieved");
     }
-    // Sanity Check for recieved values
     delay(1000);
 }
 // =================== SEND COMMAND ================
+// Sending to Screen
 void sendStatusData() {
+    // Writing values into packet
     txData.devAddr = DEVICE_ADDR;
     txData.devType = DEVICE_TYPE_XIAO;
     txData.valve_state = digitalRead(valvePin);
     txData.temperature = t;
     txData.humidity = h;
     txData.soil_moisture = m;
-    
+    // Sending Packet to Screen
     esp_now_send(cydMAC, (uint8_t*)&txData, sizeof(txData));
 }
 
+// Sending to Pump
 void sendValveData() {
+    // Setting Values in the packet to the pump
     pumpPacket.devAddr = DEVICE_ADDR;
     pumpPacket.valve_state = digitalRead(valvePin);
     pumpPacket.temp = t;
     pumpPacket.humidity = h;
-
+    // Sending Packet to Pump
     esp_now_send(pumpMAC, (uint8_t*)&pumpPacket,sizeof(pumpPacket));
 }
 
+// Function to add any peer
+// Just call function with MAC address inside
 void addPeer (uint8_t *peerAddr) {
     esp_now_peer_info_t peerInfo = {};
     memcpy(peerInfo.peer_addr, peerAddr, 6);
@@ -113,36 +130,40 @@ void addPeer (uint8_t *peerAddr) {
 // ================= SETUP =================
 void setup() {
     Serial.begin(9600);
-    delay(100);
+    delay(5000);
     // Serial.println("Yo");
     // delay(1000);
-    WiFi.mode(WIFI_STA);
-
+    WiFi.mode(WIFI_AP_STA);
+    delay(100);
     dht.begin();
-
+    delay(100);
     pinMode(valvePin, OUTPUT);
 
     if (esp_now_init() != ESP_OK) {
         Serial.println("ESP-NOW init failed");
         return;
     }
-
+    delay(100);
     esp_now_register_recv_cb(onDataRecv);
-    
+    delay(100);
     addPeer(cydMAC);
+    delay(100);
     addPeer(pumpMAC);
 }
 
 // ================= LOOP =================
 void loop() {
+    // Checking if the Override is set
+    // Meaning in Manual Mode
     if (override == 1){
         delay(100);
         return;
     }
     else {
+        // Gather environment data
         h = dht.readHumidity();
         t = dht.readTemperature(true);
-        m=analogRead(moisturePin);
+        m = analogRead(moisturePin);
 
         // h = 60;
         // t = 60;
@@ -152,20 +173,31 @@ void loop() {
 
         // Converitng reading to 0-100 scale
         // For moisture Saturation (%)
-        m=1-((m-1600)/2495);
-        delay(100);
+        // 2280 submerged
+        // 4095 dry
+        Serial.println(m);
+        m=(1-((m-2280)/1815))*100;
+        delay(50);
+        byte_m = static_cast<uint8_t>(m);
+        delay(50);
+
 
         // Check if moisture is within range
-        // And sending an update to pump on valve state change
-        if (m < (msp.set-msp.DB)){
+        Serial.println(" --- ");
+        Serial.println(msp.set-msp.DB);
+        Serial.println(msp.set+msp.DB);
+        Serial.println(byte_m);
+        Serial.print(" --- ");
+        if (byte_m < (msp.set-msp.DB)){
             digitalWrite(valvePin, HIGH);
         }
-        else if (m > (msp.set+msp.DB)){
+        else if (byte_m > (msp.set+msp.DB)){
             digitalWrite(valvePin, LOW);
         }
         delay(300);
 
         // Counting loop for sending every 10 Cycles or 5 seconds
+        // Sending to Screen and Pump Board
         if (sendCount == 9){
             sendStatusData();
             sendValveData();
@@ -175,6 +207,7 @@ void loop() {
             Serial.println(h);
             Serial.println(t);
             Serial.println(m);
+            Serial.println(byte_m);
             Serial.println("");
         }
         else {
