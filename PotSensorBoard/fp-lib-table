@@ -1,0 +1,5 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "dip14-socket-with-ic-1.snapshot.1")(type "KiCad")(uri "C:/Users/benty/Downloads/dip14-socket-with-ic-1.snapshot.1")(options "")(descr ""))
+  (lib (name "Seeeduino XIAO KICAD")(type "KiCad")(uri "C:/Users/benty/Downloads/Seeeduino XIAO KICAD")(options "")(descr ""))
+)
