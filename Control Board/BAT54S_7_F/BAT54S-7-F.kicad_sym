@@ -1,0 +1,82 @@
+
+(kicad_symbol_lib (version 20211014) (generator kicad_symbol_editor)
+  (symbol "BAT54S-7-F" (pin_names (offset 1.016)) (in_bom yes) (on_board yes)
+    (property "Reference" "D" (id 0) (at 1.27148 7.62888 0)
+      (effects (font (size 1.27 1.27)) (justify bottom left))
+    )
+    (property "Value" "BAT54S-7-F" (id 1) (at 1.27125 5.08499 0)
+      (effects (font (size 1.27 1.27)) (justify bottom left))
+    )
+    (property "Footprint" "BAT54S-7-F:SOT95P240X110-3N" (id 2) (at 0 0 0)
+      (effects (font (size 1.27 1.27)) (justify bottom) hide)
+    )
+    (property "MANUFACTURER" "Diodes Inc." (id 4) (at 0 0 0)
+      (effects (font (size 1.27 1.27)) (justify bottom) hide)
+    )
+    (symbol "BAT54S-7-F_0_0"
+      (polyline
+        (pts (xy -3.81 3.81) (xy -3.81 1.27)) (stroke (width 0.254))
+      )
+      (polyline
+        (pts (xy 3.81 3.81) (xy 3.81 1.27)) (stroke (width 0.254))
+      )
+      (polyline
+        (pts (xy -5.08 1.27) (xy -3.81 1.27)) (stroke (width 0.254))
+      )
+      (polyline
+        (pts (xy -3.81 1.27) (xy -2.54 1.27)) (stroke (width 0.254))
+      )
+      (polyline
+        (pts (xy -3.81 1.27) (xy -5.08 -1.27)) (stroke (width 0.254))
+      )
+      (polyline
+        (pts (xy -2.54 -1.27) (xy -3.81 1.27)) (stroke (width 0.254))
+      )
+      (polyline
+        (pts (xy 2.54 1.27) (xy 5.08 1.27)) (stroke (width 0.254))
+      )
+      (polyline
+        (pts (xy 5.08 1.27) (xy 3.81 -1.27)) (stroke (width 0.254))
+      )
+      (polyline
+        (pts (xy 3.81 -1.27) (xy 2.54 1.27)) (stroke (width 0.254))
+      )
+      (polyline
+        (pts (xy 3.81 -1.27) (xy 3.81 -3.81)) (stroke (width 0.254))
+      )
+      (polyline
+        (pts (xy -3.81 -1.27) (xy -3.81 -3.81)) (stroke (width 0.254))
+      )
+      (polyline
+        (pts (xy 0.0 3.81) (xy 0.0 6.35)) (stroke (width 0.254))
+      )
+      (rectangle (start -5.08 -0.762) (end 5.08 4.318)
+        (stroke (width 0.254)) (fill (type background))
+      )
+      (pin passive line (at -3.81 -8.89 90.0) (length 5.08)
+        (name "1"
+          (effects (font (size 1.016 1.016)))
+        )
+        (number "1"
+          (effects (font (size 1.016 1.016)))
+        )
+      )
+      (pin passive line (at 3.81 -8.89 90.0) (length 5.08)
+        (name "2"
+          (effects (font (size 1.016 1.016)))
+        )
+        (number "2"
+          (effects (font (size 1.016 1.016)))
+        )
+      )
+      (pin passive line (at 0.0 11.43 270.0) (length 5.08)
+        (name "3"
+          (effects (font (size 1.016 1.016)))
+        )
+        (number "3"
+          (effects (font (size 1.016 1.016)))
+        )
+      )
+    )
+  )
+)
